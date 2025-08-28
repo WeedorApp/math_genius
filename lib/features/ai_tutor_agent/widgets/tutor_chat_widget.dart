@@ -4,7 +4,6 @@ import 'dart:async';
 
 // Core imports
 import '../../../core/barrel.dart';
-import '../../../core/theme/theme_service.dart';
 
 // AI Tutor imports
 import '../barrel.dart';
@@ -69,11 +68,10 @@ class _TutorChatWidgetState extends ConsumerState<TutorChatWidget> {
       setState(() {});
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error initializing tutor session: $e'),
-            backgroundColor: Colors.red,
-          ),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Error initializing tutor session: $e',
+          isError: true,
         );
       }
     }
@@ -104,11 +102,10 @@ class _TutorChatWidgetState extends ConsumerState<TutorChatWidget> {
       _scrollToBottom();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error sending message: $e'),
-            backgroundColor: Colors.red,
-          ),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Error sending message: $e',
+          isError: true,
         );
       }
     }
@@ -138,11 +135,10 @@ class _TutorChatWidgetState extends ConsumerState<TutorChatWidget> {
         _isListening = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error listening for speech: $e'),
-            backgroundColor: Colors.red,
-          ),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Error listening for speech: $e',
+          isError: true,
         );
       }
     }
@@ -577,16 +573,18 @@ class TutorPanelScreen extends ConsumerWidget {
 
   void _getHint(BuildContext context) {
     // Todo: Implement hint generation
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Hint feature coming soon!')));
+    AdaptiveUISystem.showAdaptiveSnackBar(
+      context: context,
+      message: 'Hint feature coming soon!',
+    );
   }
 
   void _startPractice(BuildContext context) {
     // Todo: Implement practice mode
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Practice mode coming soon!')));
+    AdaptiveUISystem.showAdaptiveSnackBar(
+      context: context,
+      message: 'Practice mode coming soon!',
+    );
   }
 
   void _startVoiceChat(BuildContext context) {

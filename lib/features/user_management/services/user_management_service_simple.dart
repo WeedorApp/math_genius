@@ -128,16 +128,12 @@ class UserManagementService {
         );
       }
 
-      // Save to Firestore (temporarily disabled to test auth flow)
-      if (kDebugMode) {
-        print('UserManagementService: Skipping Firestore save for now...');
-      }
-      /*
+      // Save to Firestore
       try {
         if (kDebugMode) {
           print('UserManagementService: Attempting to save to Firestore...');
         }
-        
+
         // Add timeout to prevent hanging
         await FirestoreService.createOrUpdateUser(
           userId: firebaseUser.uid,
@@ -151,7 +147,7 @@ class UserManagementService {
             throw Exception('Firestore save timed out');
           },
         );
-        
+
         if (kDebugMode) {
           print('UserManagementService: User saved to Firestore');
         }
@@ -161,7 +157,6 @@ class UserManagementService {
         }
         // Continue even if Firestore fails
       }
-      */
 
       // Save locally
       if (kDebugMode) {

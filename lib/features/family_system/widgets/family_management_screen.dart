@@ -40,11 +40,10 @@ class _FamilyManagementScreenState
 
   Future<void> _createParentAccount() async {
     if (_emailController.text.isEmpty || _nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all required fields'),
-          backgroundColor: Colors.red,
-        ),
+      AdaptiveUISystem.showAdaptiveSnackBar(
+        context: context,
+        message: 'Please fill in all required fields',
+        isError: true,
       );
       return;
     }
@@ -64,20 +63,17 @@ class _FamilyManagementScreenState
       _nameController.clear();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Parent account created: ${parentAccount.name}'),
-            backgroundColor: Colors.green,
-          ),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Parent account created: ${parentAccount.name}',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error creating parent account: $e'),
-            backgroundColor: Colors.red,
-          ),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Error creating parent account: $e',
+          isError: true,
         );
       }
     } finally {
@@ -89,11 +85,10 @@ class _FamilyManagementScreenState
 
   Future<void> _createStudentProfile() async {
     if (_selectedParentId == null || _studentNameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a parent and enter student name'),
-          backgroundColor: Colors.red,
-        ),
+      AdaptiveUISystem.showAdaptiveSnackBar(
+        context: context,
+        message: 'Please select a parent and enter student name',
+        isError: true,
       );
       return;
     }
@@ -115,20 +110,17 @@ class _FamilyManagementScreenState
       _pinController.clear();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Student profile created: ${studentProfile.name}'),
-            backgroundColor: Colors.green,
-          ),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Student profile created: ${studentProfile.name}',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error creating student profile: $e'),
-            backgroundColor: Colors.red,
-          ),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Error creating student profile: $e',
+          isError: true,
         );
       }
     } finally {
@@ -663,21 +655,19 @@ class _FamilyLoginScreenState extends ConsumerState<FamilyLoginScreen> {
 
   Future<void> _authenticate() async {
     if (_isParentLogin && _emailController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email'),
-          backgroundColor: Colors.red,
-        ),
+      AdaptiveUISystem.showAdaptiveSnackBar(
+        context: context,
+        message: 'Please enter your email',
+        isError: true,
       );
       return;
     }
 
     if (!_isParentLogin && _pinController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your PIN'),
-          backgroundColor: Colors.red,
-        ),
+      AdaptiveUISystem.showAdaptiveSnackBar(
+        context: context,
+        message: 'Please enter your PIN',
+        isError: true,
       );
       return;
     }
@@ -696,32 +686,28 @@ class _FamilyLoginScreenState extends ConsumerState<FamilyLoginScreen> {
 
       if (result.success) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Welcome back!'),
-              backgroundColor: Colors.green,
-            ),
+          AdaptiveUISystem.showAdaptiveSnackBar(
+            context: context,
+            message: 'Welcome back!',
           );
           // Navigate to appropriate screen based on role
           Navigator.of(context).pop();
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Authentication failed. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
+          AdaptiveUISystem.showAdaptiveSnackBar(
+            context: context,
+            message: 'Authentication failed. Please try again.',
+            isError: true,
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error during authentication: $e'),
-            backgroundColor: Colors.red,
-          ),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Error during authentication: $e',
+          isError: true,
         );
       }
     } finally {

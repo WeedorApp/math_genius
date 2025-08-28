@@ -581,6 +581,49 @@ class ReportExportService {
     }
   }
 
+  /// Save report template
+  Future<void> saveReportTemplate(
+    String templateName,
+    Map<String, dynamic> template,
+  ) async {
+    try {
+      final templates = await _loadAllTemplates();
+      templates[templateName] = template;
+      await _prefs.setString(_templatesKey, jsonEncode(templates));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving report template: $e');
+      }
+    }
+  }
+
+  /// Load all report templates
+  Future<Map<String, dynamic>> _loadAllTemplates() async {
+    try {
+      final templatesString = _prefs.getString(_templatesKey);
+      if (templatesString == null) return {};
+      return Map<String, dynamic>.from(jsonDecode(templatesString));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading report templates: $e');
+      }
+      return {};
+    }
+  }
+
+  /// Get report template
+  Future<Map<String, dynamic>?> getReportTemplate(String templateName) async {
+    try {
+      final templates = await _loadAllTemplates();
+      return templates[templateName];
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting report template: $e');
+      }
+      return null;
+    }
+  }
+
   /// Generate unique ID
   String _generateId() {
     return DateTime.now().millisecondsSinceEpoch.toString() +

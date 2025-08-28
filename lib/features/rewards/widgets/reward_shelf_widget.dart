@@ -636,10 +636,9 @@ class _RewardDisplayWidgetState extends ConsumerState<RewardDisplayWidget>
       _controller.forward();
     }
 
-    showDialog(
+    AdaptiveUISystem.showAdaptiveDialog(
       context: context,
-      barrierDismissible: true,
-      builder: (context) => _RewardDialog(
+      child: _RewardDialog(
         title: title,
         message: message,
         icon: icon,

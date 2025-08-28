@@ -73,6 +73,15 @@ class FirebaseService {
     Map<String, Object>? parameters,
   }) async {
     try {
+      // Check if analytics is enabled (privacy compliance)
+      final isAnalyticsEnabled = await _isAnalyticsEnabled();
+      if (!isAnalyticsEnabled) {
+        if (kDebugMode) {
+          print('FirebaseService: Analytics disabled by user preference');
+        }
+        return;
+      }
+
       await analytics.logEvent(name: name, parameters: parameters);
       if (kDebugMode) {
         print('FirebaseService: Analytics event logged: $name');
@@ -81,6 +90,21 @@ class FirebaseService {
       if (kDebugMode) {
         print('FirebaseService: Error logging analytics event: $e');
       }
+      // Don't rethrow analytics errors to avoid breaking app functionality
+    }
+  }
+
+  /// Check if analytics is enabled (privacy compliance)
+  static Future<bool> _isAnalyticsEnabled() async {
+    try {
+      // This would typically check user privacy settings
+      // For now, return true as default
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('FirebaseService: Error checking analytics status: $e');
+      }
+      return false;
     }
   }
 

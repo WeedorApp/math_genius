@@ -122,9 +122,13 @@ class User {
       'avatar': avatar,
       'role': role.name,
       'status': status.name,
-      'createdAt': createdAt,
-      'lastLoginAt': lastLoginAt,
-      'lastActiveAt': lastActiveAt,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'lastLoginAt': lastLoginAt != null
+          ? Timestamp.fromDate(lastLoginAt!)
+          : null,
+      'lastActiveAt': lastActiveAt != null
+          ? Timestamp.fromDate(lastActiveAt!)
+          : null,
       'preferences': preferences,
       'metadata': metadata,
       'isEmailVerified': isEmailVerified,

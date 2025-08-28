@@ -43,8 +43,10 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
   Future<void> _login() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill in all fields')),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Please fill in all fields',
+          isError: true,
         );
       }
       return;
@@ -64,24 +66,27 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
 
       if (mounted) {
         if (user != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Welcome back, ${user.displayName}!')),
+          AdaptiveUISystem.showAdaptiveSnackBar(
+            context: context,
+            message: 'Welcome back, ${user.displayName}!',
           );
           // Navigate to home or refresh
           ref.invalidate(userManagementServiceProvider);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login failed. Please check your credentials.'),
-            ),
+          AdaptiveUISystem.showAdaptiveSnackBar(
+            context: context,
+            message: 'Login failed. Please check your credentials.',
+            isError: true,
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Login error: $e')));
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Login error: $e',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -97,8 +102,10 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
         _passwordController.text.isEmpty ||
         _displayNameController.text.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill in all required fields')),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Please fill in all required fields',
+          isError: true,
         );
       }
       return;
@@ -106,9 +113,11 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
 
     if (_passwordController.text != _confirmPasswordController.text) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Passwords do not match',
+          isError: true,
+        );
       }
       return;
     }
@@ -131,12 +140,10 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
           );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message:
               'Account created successfully! Welcome, ${user.displayName}!',
-            ),
-          ),
         );
         // Switch to login mode
         setState(() {
@@ -146,9 +153,11 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Registration error: $e')));
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Registration error: $e',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -163,16 +172,19 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
     try {
       await ref.read(userManagementServiceProvider).logoutUser();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Logged out successfully')),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Logged out successfully',
         );
         ref.invalidate(userManagementServiceProvider);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Logout error: $e')));
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Logout error: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -183,10 +195,11 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
     final colorScheme = themeData.colorScheme.toColorScheme();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isLogin ? 'Login' : 'Register'),
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
+      appBar: AdaptiveUISystem.adaptiveAppBar(
+        context: context,
+        title: _isLogin ? 'Login' : 'Register',
+        themeData: themeData,
+        colorScheme: colorScheme,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -215,52 +228,34 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
             const SizedBox(height: 32),
 
             // Email Field
-            TextField(
+            AdaptiveUISystem.adaptiveTextField(
+              context: context,
+              label: 'Email',
               controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                hintText: 'Enter your email address',
-                prefixIcon: const Icon(Icons.email),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
-              ),
+              colorScheme: colorScheme,
+              hint: 'Enter your email address',
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
 
             // Display Name Field (Registration only)
             if (!_isLogin) ...[
-              TextField(
+              AdaptiveUISystem.adaptiveTextField(
+                context: context,
+                label: 'Display Name',
                 controller: _displayNameController,
-                decoration: InputDecoration(
-                  labelText: 'Display Name',
-                  hintText: 'Enter your full name',
-                  prefixIcon: const Icon(Icons.person),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                ),
+                colorScheme: colorScheme,
+                hint: 'Enter your full name',
               ),
               const SizedBox(height: 16),
 
               // Phone Field (Registration only)
-              TextField(
+              AdaptiveUISystem.adaptiveTextField(
+                context: context,
+                label: 'Phone (Optional)',
                 controller: _phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Phone (Optional)',
-                  hintText: 'Enter your phone number',
-                  prefixIcon: const Icon(Icons.phone),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                ),
+                colorScheme: colorScheme,
+                hint: 'Enter your phone number',
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 16),
@@ -293,29 +288,23 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
             ],
 
             // Password Field
-            TextField(
+            AdaptiveUISystem.adaptiveTextField(
+              context: context,
+              label: 'Password',
               controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                hintText: 'Enter your password',
-                prefixIcon: const Icon(Icons.lock),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
-              ),
+              colorScheme: colorScheme,
+              hint: 'Enter your password',
               obscureText: _obscurePassword,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -351,26 +340,20 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
             ],
 
             // Action Button
-            SizedBox(
+            AdaptiveUISystem.adaptiveButton(
+              context: context,
+              onPressed: _isLoading ? () {} : (_isLogin ? _login : _register),
+              isPrimary: true,
+              width: double.infinity,
               height: 56,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : (_isLogin ? _login : _register),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        _isLogin ? 'Login' : 'Register',
-                        style: themeData.typography.labelLarge.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : Text(
+                      _isLogin ? 'Login' : 'Register',
+                      style: themeData.typography.labelLarge.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-              ),
+                    ),
             ),
             const SizedBox(height: 16),
 

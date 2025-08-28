@@ -484,6 +484,9 @@ class AnalyticsService {
             (stats['correctAnswers'] as int) / totalQuestions;
       }
 
+      // Save user stats for caching
+      await _saveUserStats(userId, stats);
+
       return stats;
     } catch (e) {
       if (kDebugMode) {
@@ -533,10 +536,67 @@ class AnalyticsService {
                 (stats['totalQuestions'] as int));
       }
 
+      // Save topic stats for caching
+      await _saveTopicStats(topic, stats);
+
       return stats;
     } catch (e) {
       if (kDebugMode) {
         print('Error getting topic stats: $e');
+      }
+      return {};
+    }
+  }
+
+  /// Save topic statistics
+  Future<void> _saveTopicStats(String topic, Map<String, dynamic> stats) async {
+    try {
+      final allStats = await _loadAllTopicStats();
+      allStats[topic] = stats;
+      await _prefs.setString(_topicStatsKey, jsonEncode(allStats));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving topic stats: $e');
+      }
+    }
+  }
+
+  /// Load all topic statistics
+  Future<Map<String, dynamic>> _loadAllTopicStats() async {
+    try {
+      final statsString = _prefs.getString(_topicStatsKey);
+      if (statsString == null) return {};
+      return Map<String, dynamic>.from(jsonDecode(statsString));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading topic stats: $e');
+      }
+      return {};
+    }
+  }
+
+  /// Save user statistics
+  Future<void> _saveUserStats(String userId, Map<String, dynamic> stats) async {
+    try {
+      final allStats = await _loadAllUserStats();
+      allStats[userId] = stats;
+      await _prefs.setString(_userStatsKey, jsonEncode(allStats));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving user stats: $e');
+      }
+    }
+  }
+
+  /// Load all user statistics
+  Future<Map<String, dynamic>> _loadAllUserStats() async {
+    try {
+      final statsString = _prefs.getString(_userStatsKey);
+      if (statsString == null) return {};
+      return Map<String, dynamic>.from(jsonDecode(statsString));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading user stats: $e');
       }
       return {};
     }

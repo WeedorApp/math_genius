@@ -46,8 +46,10 @@ class _LiveSessionHostingWidgetState
   Future<void> _createSession() async {
     if (_titleController.text.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a session title')),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Please enter a session title',
+          isError: true,
         );
       }
       return;
@@ -74,17 +76,18 @@ class _LiveSessionHostingWidgetState
           _showQRCode = true;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Session "${session.title}" created successfully!'),
-          ),
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Session "${session.title}" created successfully!',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error creating session: $e')));
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Error creating session: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -102,15 +105,18 @@ class _LiveSessionHostingWidgetState
           _currentSession = updatedSession;
         });
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Session started!')));
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Session started!',
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error starting session: $e')));
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Error starting session: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -128,15 +134,18 @@ class _LiveSessionHostingWidgetState
           _currentSession = updatedSession;
         });
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Session ended!')));
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Session ended!',
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error ending session: $e')));
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Error ending session: $e',
+          isError: true,
+        );
       }
     }
   }

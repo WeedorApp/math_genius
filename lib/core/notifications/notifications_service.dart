@@ -581,6 +581,36 @@ class NotificationsService {
     }
   }
 
+  /// Save notification settings
+  Future<void> saveNotificationSettings(Map<String, dynamic> settings) async {
+    try {
+      await _prefs.setString(_settingsKey, jsonEncode(settings));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving notification settings: $e');
+      }
+    }
+  }
+
+  /// Load notification settings
+  Future<Map<String, dynamic>> loadNotificationSettings() async {
+    try {
+      final settingsString = _prefs.getString(_settingsKey);
+      if (settingsString == null) return {};
+      return Map<String, dynamic>.from(jsonDecode(settingsString));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading notification settings: $e');
+      }
+      return {};
+    }
+  }
+
+  /// Get current timezone
+  String getCurrentTimezone() {
+    return tz.local.name;
+  }
+
   /// Generate unique ID
   String _generateId() {
     return DateTime.now().millisecondsSinceEpoch.toString() +

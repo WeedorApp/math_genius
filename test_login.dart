@@ -9,13 +9,17 @@ void main() async {
 
 Future<void> testLogin() async {
   try {
-    print('Testing login functionality...');
+    if (kDebugMode) {
+      print('Testing login functionality...');
+    }
 
     // Test with a known user
     final email = 'testmode@mode.org';
     final password = 'password123';
 
-    print('Attempting to login with: $email');
+    if (kDebugMode) {
+      print('Attempting to login with: $email');
+    }
 
     // Sign in with Firebase
     final userCredential = await FirebaseAuth.instance
@@ -23,9 +27,11 @@ Future<void> testLogin() async {
 
     final user = userCredential.user;
     if (user != null) {
-      print('✅ Login successful! User ID: ${user.uid}');
-      print('User email: ${user.email}');
-      print('User display name: ${user.displayName}');
+      if (kDebugMode) {
+        print('✅ Login successful! User ID: ${user.uid}');
+        print('User email: ${user.email}');
+        print('User display name: ${user.displayName}');
+      }
 
       // Test Firestore access
       final userData = await FirebaseFirestore.instance
@@ -34,15 +40,23 @@ Future<void> testLogin() async {
           .get();
 
       if (userData.exists) {
-        print('✅ User data found in Firestore');
-        print('User data: ${userData.data()}');
+        if (kDebugMode) {
+          print('✅ User data found in Firestore');
+          print('User data: ${userData.data()}');
+        }
       } else {
-        print('⚠️ No user data found in Firestore');
+        if (kDebugMode) {
+          print('⚠️ No user data found in Firestore');
+        }
       }
     } else {
-      print('❌ Login failed - no user returned');
+      if (kDebugMode) {
+        print('❌ Login failed - no user returned');
+      }
     }
   } catch (e) {
-    print('❌ Login error: $e');
+    if (kDebugMode) {
+      print('❌ Login error: $e');
+    }
   }
 }
