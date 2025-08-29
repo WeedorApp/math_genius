@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 // Core imports
 import '../../../../core/barrel.dart';
@@ -424,7 +425,7 @@ class StudentDashboard extends ConsumerWidget {
           Center(
             child: TextButton.icon(
               onPressed: () {
-                Navigator.of(context).pushNamed('/student/games');
+                context.push('/student/games');
               },
               icon: const Icon(Icons.arrow_forward),
               label: const Text('Play Math Games'),

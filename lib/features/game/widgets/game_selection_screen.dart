@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 // Core imports
 import '../../../core/barrel.dart';
@@ -197,7 +198,7 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                     'Configure ChatGPT and other settings',
                     Icons.settings,
                     Colors.orange,
-                    () => Navigator.pushNamed(context, '/chatgpt-settings'),
+                    () => context.push('/settings/chatgpt'),
                     themeData,
                     colorScheme,
                   ),

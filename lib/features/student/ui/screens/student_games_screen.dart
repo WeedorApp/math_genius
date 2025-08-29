@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 // Core imports
 import '../../../../core/barrel.dart' hide MathProblem;
@@ -405,27 +406,27 @@ class _StudentGamesScreenState extends ConsumerState<StudentGamesScreen> {
   }
 
   void _startMathChallenge(BuildContext context) {
-    Navigator.of(context).pushNamed('/student/game');
+    context.push('/game-selection');
   }
 
   void _startAdditionGame(BuildContext context) {
     // For now, start the same game but could be customized
-    Navigator.of(context).pushNamed('/student/game');
+    context.push('/game-selection');
   }
 
   void _startSubtractionGame(BuildContext context) {
-    Navigator.of(context).pushNamed('/student/game');
+    context.push('/game-selection');
   }
 
   void _startMultiplicationGame(BuildContext context) {
-    Navigator.of(context).pushNamed('/student/game');
+    context.push('/game-selection');
   }
 
   void _startDivisionGame(BuildContext context) {
-    Navigator.of(context).pushNamed('/student/game');
+    context.push('/game-selection');
   }
 
   void _startSpeedMath(BuildContext context) {
-    Navigator.of(context).pushNamed('/student/game');
+    context.push('/game-selection');
   }
 }

@@ -790,7 +790,7 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
           // Try alternative navigation method
           try {
             if (!mounted) return;
-            Navigator.of(context).pushReplacementNamed('/home');
+            context.go('/home');
             if (kDebugMode) {
               print('ClassSelectionScreen: Alternative navigation successful');
             }
