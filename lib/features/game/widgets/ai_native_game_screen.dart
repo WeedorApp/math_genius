@@ -60,6 +60,51 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   void initState() {
     super.initState();
     _initializeAnimations();
+    _loadUserPreferences();
+  }
+
+  Future<void> _loadUserPreferences() async {
+    try {
+      final prefsService = ref.read(userPreferencesServiceProvider);
+      final preferences = await prefsService.getGamePreferences();
+      
+      // Auto-configure based on user preferences
+      setState(() {
+        _selectedDifficulty = _mapGameDifficultyToAI(preferences.preferredDifficulty);
+        _selectedTopic = preferences.preferredCategory;
+        _selectedQuestionCount = preferences.preferredQuestionCount;
+        _timeRemaining = preferences.preferredTimeLimit;
+        
+        // Skip selection screens if preferences are set
+        if (_selectedDifficulty != null && _selectedTopic != null && _selectedQuestionCount != null) {
+          _showDifficultySelection = false;
+          _showTopicSelection = false;
+          _showQuestionCountSelection = false;
+          _showTimeLimitSelection = false;
+          
+          // Auto-start the game
+          _startGame();
+        }
+      });
+    } catch (e) {
+      // Continue with manual selection if preferences loading fails
+      if (kDebugMode) {
+        print('Failed to load user preferences: $e');
+      }
+    }
+  }
+
+  AIDifficulty _mapGameDifficultyToAI(GameDifficulty gameDifficulty) {
+    switch (gameDifficulty) {
+      case GameDifficulty.easy:
+        return AIDifficulty.beginner;
+      case GameDifficulty.normal:
+        return AIDifficulty.intermediate;
+      case GameDifficulty.genius:
+        return AIDifficulty.advanced;
+      case GameDifficulty.quantum:
+        return AIDifficulty.expert;
+    }
   }
 
   void _initializeAnimations() {

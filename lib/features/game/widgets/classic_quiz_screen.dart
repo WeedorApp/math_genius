@@ -34,12 +34,30 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       // Load user preferences
       final prefsService = ref.read(userPreferencesServiceProvider);
       final preferences = await prefsService.getGamePreferences();
+
+      // Validate preferences and generate questions
+      if (preferences.preferredQuestionCount > 0) {
+        _generateQuestionsFromPreferences(preferences);
+      } else {
+        // Fallback if preferences are invalid
+        _generateQuestions();
+      }
       
-      // Generate questions based on preferences
-      _generateQuestionsFromPreferences(preferences);
+      // Ensure we have a valid user answers list
+      _userAnswers = List.filled(_questions.length, -1);
+      
+      // Update UI
+      if (mounted) {
+        setState(() {});
+      }
     } catch (e) {
-      // Fallback to default questions
+      // Fallback to default questions on any error
       _generateQuestions();
+      _userAnswers = List.filled(_questions.length, -1);
+      
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -48,7 +66,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     final questionCount = preferences.preferredQuestionCount;
     final difficulty = preferences.preferredDifficulty;
     final category = preferences.preferredCategory;
-    
+
     _questions = _generateDynamicQuestions(
       count: questionCount,
       difficulty: difficulty,
@@ -98,11 +116,11 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     required GameCategory category,
   }) {
     final questions = <Map<String, dynamic>>[];
-    
+
     for (int i = 0; i < count; i++) {
       questions.add(_generateSingleQuestion(category, difficulty, i));
     }
-    
+
     return questions;
   }
 
@@ -112,7 +130,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     int index,
   ) {
     final random = (DateTime.now().millisecond + index) % 100;
-    
+
     switch (category) {
       case GameCategory.addition:
         return _generateAdditionQuestion(difficulty, random);
@@ -127,157 +145,205 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     }
   }
 
-  Map<String, dynamic> _generateAdditionQuestion(GameDifficulty difficulty, int random) {
+  Map<String, dynamic> _generateAdditionQuestion(
+    GameDifficulty difficulty,
+    int random,
+  ) {
     int a = 1, b = 1;
+    final safeRandom = random == 0 ? 1 : random;
+    
     switch (difficulty) {
       case GameDifficulty.easy:
-        a = (random % 9) + 1;
-        b = (random % 9) + 1;
+        a = (safeRandom % 9) + 1;
+        b = (safeRandom % 9) + 1;
         break;
       case GameDifficulty.normal:
-        a = (random % 50) + 10;
-        b = (random % 50) + 10;
+        a = (safeRandom % 50) + 10;
+        b = (safeRandom % 50) + 10;
         break;
       case GameDifficulty.genius:
-        a = (random % 100) + 50;
-        b = (random % 100) + 50;
+        a = (safeRandom % 100) + 50;
+        b = (safeRandom % 100) + 50;
         break;
       case GameDifficulty.quantum:
-        a = (random % 500) + 100;
-        b = (random % 500) + 100;
+        a = (safeRandom % 500) + 100;
+        b = (safeRandom % 500) + 100;
         break;
     }
-    
+
     final correct = a + b;
-    final options = [
+    final options = <String>[
       correct.toString(),
-      (correct + (random % 5) + 1).toString(),
-      (correct - (random % 5) - 1).toString(),
-      (correct + (random % 10) + 5).toString(),
+      (correct + (safeRandom % 5) + 1).toString(),
+      (correct - (safeRandom % 5) - 1).toString(),
+      (correct + (safeRandom % 10) + 5).toString(),
     ];
-    options.shuffle();
-    final correctIndex = options.indexOf(correct.toString());
     
+    // Remove duplicates and ensure we have exactly 4 unique options
+    final uniqueOptions = options.toSet().toList();
+    while (uniqueOptions.length < 4) {
+      uniqueOptions.add((correct + uniqueOptions.length + 10).toString());
+    }
+    
+    uniqueOptions.shuffle();
+    final correctIndex = uniqueOptions.indexOf(correct.toString());
+
     return {
       'question': 'What is $a + $b?',
-      'options': options,
+      'options': uniqueOptions.take(4).toList(),
       'correctAnswer': correctIndex,
       'explanation': '$a + $b = $correct',
     };
   }
 
-  Map<String, dynamic> _generateSubtractionQuestion(GameDifficulty difficulty, int random) {
+  Map<String, dynamic> _generateSubtractionQuestion(
+    GameDifficulty difficulty,
+    int random,
+  ) {
     int a = 10, b = 1;
+    final safeRandom = random == 0 ? 1 : random;
+
     switch (difficulty) {
       case GameDifficulty.easy:
-        a = (random % 15) + 10;
-        b = (random % a) + 1;
+        a = (safeRandom % 15) + 10;
+        b = (safeRandom % (a ~/ 2)) + 1;
         break;
       case GameDifficulty.normal:
-        a = (random % 80) + 20;
-        b = (random % a) + 1;
+        a = (safeRandom % 80) + 20;
+        b = (safeRandom % (a ~/ 2)) + 1;
         break;
       case GameDifficulty.genius:
-        a = (random % 150) + 50;
-        b = (random % a) + 1;
+        a = (safeRandom % 150) + 50;
+        b = (safeRandom % (a ~/ 2)) + 1;
         break;
       case GameDifficulty.quantum:
-        a = (random % 800) + 200;
-        b = (random % a) + 1;
+        a = (safeRandom % 800) + 200;
+        b = (safeRandom % (a ~/ 2)) + 1;
         break;
     }
-    
+
     final correct = a - b;
-    final options = [
+    final options = <String>[
       correct.toString(),
-      (correct + (random % 5) + 1).toString(),
-      (correct - (random % 5) - 1).toString(),
-      (correct + (random % 10) + 5).toString(),
+      (correct + (safeRandom % 5) + 1).toString(),
+      (correct - (safeRandom % 5) - 1).toString(),
+      (correct + (safeRandom % 10) + 5).toString(),
     ];
-    options.shuffle();
-    final correctIndex = options.indexOf(correct.toString());
-    
+
+    // Remove duplicates and ensure we have exactly 4 unique options
+    final uniqueOptions = options.toSet().toList();
+    while (uniqueOptions.length < 4) {
+      uniqueOptions.add((correct + uniqueOptions.length + 10).toString());
+    }
+
+    uniqueOptions.shuffle();
+    final correctIndex = uniqueOptions.indexOf(correct.toString());
+
     return {
       'question': 'What is $a - $b?',
-      'options': options,
+      'options': uniqueOptions.take(4).toList(),
       'correctAnswer': correctIndex,
       'explanation': '$a - $b = $correct',
     };
   }
 
-  Map<String, dynamic> _generateMultiplicationQuestion(GameDifficulty difficulty, int random) {
+  Map<String, dynamic> _generateMultiplicationQuestion(
+    GameDifficulty difficulty,
+    int random,
+  ) {
     int a = 1, b = 1;
+    final safeRandom = random == 0 ? 1 : random;
+    
     switch (difficulty) {
       case GameDifficulty.easy:
-        a = (random % 10) + 1;
-        b = (random % 10) + 1;
+        a = (safeRandom % 10) + 1;
+        b = (safeRandom % 10) + 1;
         break;
       case GameDifficulty.normal:
-        a = (random % 12) + 1;
-        b = (random % 12) + 1;
+        a = (safeRandom % 12) + 1;
+        b = (safeRandom % 12) + 1;
         break;
       case GameDifficulty.genius:
-        a = (random % 20) + 1;
-        b = (random % 15) + 1;
+        a = (safeRandom % 20) + 1;
+        b = (safeRandom % 15) + 1;
         break;
       case GameDifficulty.quantum:
-        a = (random % 50) + 1;
-        b = (random % 25) + 1;
+        a = (safeRandom % 50) + 1;
+        b = (safeRandom % 25) + 1;
         break;
     }
-    
+
     final correct = a * b;
-    final options = [
+    final options = <String>[
       correct.toString(),
-      (correct + (random % 10) + 1).toString(),
-      (correct - (random % 10) - 1).toString(),
-      (correct + (random % 20) + 10).toString(),
+      (correct + (safeRandom % 10) + 1).toString(),
+      (correct - (safeRandom % 10) - 1).toString(),
+      (correct + (safeRandom % 20) + 10).toString(),
     ];
-    options.shuffle();
-    final correctIndex = options.indexOf(correct.toString());
     
+    // Remove duplicates and ensure we have exactly 4 unique options
+    final uniqueOptions = options.toSet().toList();
+    while (uniqueOptions.length < 4) {
+      uniqueOptions.add((correct + uniqueOptions.length + 15).toString());
+    }
+    
+    uniqueOptions.shuffle();
+    final correctIndex = uniqueOptions.indexOf(correct.toString());
+
     return {
       'question': 'What is $a × $b?',
-      'options': options,
+      'options': uniqueOptions.take(4).toList(),
       'correctAnswer': correctIndex,
       'explanation': '$a × $b = $correct',
     };
   }
 
-  Map<String, dynamic> _generateDivisionQuestion(GameDifficulty difficulty, int random) {
+  Map<String, dynamic> _generateDivisionQuestion(
+    GameDifficulty difficulty,
+    int random,
+  ) {
     int result = 1, divisor = 2;
+    final safeRandom = random == 0 ? 1 : random;
+    
     switch (difficulty) {
       case GameDifficulty.easy:
-        result = (random % 10) + 1;
-        divisor = (random % 5) + 2;
+        result = (safeRandom % 10) + 1;
+        divisor = (safeRandom % 5) + 2;
         break;
       case GameDifficulty.normal:
-        result = (random % 20) + 5;
-        divisor = (random % 8) + 2;
+        result = (safeRandom % 20) + 5;
+        divisor = (safeRandom % 8) + 2;
         break;
       case GameDifficulty.genius:
-        result = (random % 50) + 10;
-        divisor = (random % 12) + 3;
+        result = (safeRandom % 50) + 10;
+        divisor = (safeRandom % 12) + 3;
         break;
       case GameDifficulty.quantum:
-        result = (random % 100) + 20;
-        divisor = (random % 20) + 5;
+        result = (safeRandom % 100) + 20;
+        divisor = (safeRandom % 20) + 5;
         break;
     }
-    
+
     final dividend = result * divisor;
-    final options = [
+    final options = <String>[
       result.toString(),
-      (result + (random % 5) + 1).toString(),
-      (result - (random % 5) - 1).toString(),
-      (result + (random % 10) + 5).toString(),
+      (result + (safeRandom % 5) + 1).toString(),
+      (result - (safeRandom % 5) - 1).toString(),
+      (result + (safeRandom % 10) + 5).toString(),
     ];
-    options.shuffle();
-    final correctIndex = options.indexOf(result.toString());
     
+    // Remove duplicates and ensure we have exactly 4 unique options
+    final uniqueOptions = options.toSet().toList();
+    while (uniqueOptions.length < 4) {
+      uniqueOptions.add((result + uniqueOptions.length + 8).toString());
+    }
+    
+    uniqueOptions.shuffle();
+    final correctIndex = uniqueOptions.indexOf(result.toString());
+
     return {
       'question': 'What is $dividend ÷ $divisor?',
-      'options': options,
+      'options': uniqueOptions.take(4).toList(),
       'correctAnswer': correctIndex,
       'explanation': '$dividend ÷ $divisor = $result',
     };
