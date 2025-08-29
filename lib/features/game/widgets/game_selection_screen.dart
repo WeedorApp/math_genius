@@ -132,9 +132,9 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               SizedBox(height: context.adaptiveLayout.cardSpacing),
-              
+
               // Quick Start Button
               Card(
                 child: Padding(
@@ -143,7 +143,11 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.rocket_launch, color: Colors.green, size: 24),
+                          Icon(
+                            Icons.rocket_launch,
+                            color: Colors.green,
+                            size: 24,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -151,11 +155,16 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                               children: [
                                 const Text(
                                   'Quick Start',
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 Text(
                                   'Start playing instantly with smart defaults',
-                                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ],
                             ),
@@ -167,26 +176,35 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => setState(() => _selectedGame = GameSelectionMode.classic),
+                              onPressed: () => setState(
+                                () => _selectedGame = GameSelectionMode.classic,
+                              ),
                               icon: const Icon(Icons.play_arrow),
                               label: const Text('Start Classic'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => setState(() => _selectedGame = GameSelectionMode.aiNative),
+                              onPressed: () => setState(
+                                () =>
+                                    _selectedGame = GameSelectionMode.aiNative,
+                              ),
                               icon: const Icon(Icons.psychology),
                               label: const Text('AI Game'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                               ),
                             ),
                           ),
@@ -197,11 +215,11 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                 ),
               ),
               SizedBox(height: context.adaptiveLayout.sectionSpacing),
-              
+
               const Divider(),
-              
+
               SizedBox(height: context.adaptiveLayout.cardSpacing),
-              
+
               Text(
                 'More Game Options',
                 style: themeData.typography.titleMedium.copyWith(
@@ -209,9 +227,9 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               SizedBox(height: context.adaptiveLayout.cardSpacing),
-              
+
               // Game Options
               GridView.count(
                 shrinkWrap: true,

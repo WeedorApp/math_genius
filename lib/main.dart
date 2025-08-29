@@ -76,8 +76,12 @@ void main() async {
         overrides: [
           themeServiceProvider.overrideWithValue(ThemeService(prefs)),
           sharedPreferencesProvider.overrideWithValue(prefs),
-          aiTutorServiceProvider.overrideWithValue(AITutorService(prefs, hiveBox)),
-          userPreferencesServiceProvider.overrideWithValue(UserPreferencesService(prefs)),
+          aiTutorServiceProvider.overrideWithValue(
+            AITutorService(prefs, hiveBox),
+          ),
+          userPreferencesServiceProvider.overrideWithValue(
+            UserPreferencesService(prefs),
+          ),
         ],
         child: const MathGeniusApp(),
       ),
