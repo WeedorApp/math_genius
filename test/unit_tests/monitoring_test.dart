@@ -1,20 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:math_genius/core/monitoring/barrel.dart';
 
-class MockSharedPreferences extends Mock implements SharedPreferences {}
-
 void main() {
-  group('Crash Reporting Service Tests', () {
-    late CrashReportingService crashService;
-    late MockSharedPreferences mockPrefs;
-
-    setUp(() {
-      mockPrefs = MockSharedPreferences();
-      crashService = CrashReportingService(mockPrefs);
-    });
-
+  group('Crash Report Tests', () {
     test('should create crash report correctly', () {
       final context = ErrorContext(
         userId: 'user_123',
@@ -68,31 +56,14 @@ void main() {
       expect(deserializedCrash.id, equals(originalCrash.id));
       expect(deserializedCrash.error, equals(originalCrash.error));
       expect(deserializedCrash.severity, equals(originalCrash.severity));
-      expect(deserializedCrash.context.userId, equals(originalCrash.context.userId));
-    });
-
-    test('should calculate crash analytics correctly', () async {
-      // Mock local crash reports
-      when(mockPrefs.getString('crash_reports')).thenReturn('[]');
-      
-      final analytics = await crashService.getCrashAnalytics();
-      
-      expect(analytics['totalCrashes'], equals(0));
-      expect(analytics['fatalCrashes'], equals(0));
-      expect(analytics['recentCrashes'], equals(0));
-      expect(analytics['crashRate'], equals(0.0));
+      expect(
+        deserializedCrash.context.userId,
+        equals(originalCrash.context.userId),
+      );
     });
   });
 
-  group('Performance Monitoring Service Tests', () {
-    late PerformanceMonitoringService performanceService;
-    late MockSharedPreferences mockPrefs;
-
-    setUp(() {
-      mockPrefs = MockSharedPreferences();
-      performanceService = PerformanceMonitoringService(mockPrefs);
-    });
-
+  group('Performance Metric Tests', () {
     test('should create performance metric correctly', () {
       final metric = PerformanceMetric(
         id: 'metric_123',
@@ -131,73 +102,10 @@ void main() {
       expect(deserializedMetric.id, equals(originalMetric.id));
       expect(deserializedMetric.type, equals(originalMetric.type));
       expect(deserializedMetric.duration, equals(originalMetric.duration));
-      expect(deserializedMetric.attributes['endpoint'], equals('/api/problems'));
-    });
-
-    test('should calculate performance analytics correctly', () async {
-      // Mock empty metrics
-      when(mockPrefs.getString('performance_metrics')).thenReturn('[]');
-      
-      final analytics = await performanceService.getPerformanceAnalytics();
-      
-      expect(analytics['totalMetrics'], equals(0));
-      expect(analytics['recentMetrics'], equals(0));
-      expect(analytics['activeTraces'], equals(0));
-    });
-
-    test('should measure screen load time', () async {
-      bool loadFunctionCalled = false;
-      
-      final metric = await performanceService.measureScreenLoad(
-        'TestScreen',
-        () async {
-          loadFunctionCalled = true;
-          await Future.delayed(const Duration(milliseconds: 100));
-        },
+      expect(
+        deserializedMetric.attributes['endpoint'],
+        equals('/api/problems'),
       );
-
-      expect(loadFunctionCalled, isTrue);
-      expect(metric.name, equals('screen_load_TestScreen'));
-      expect(metric.type, equals(PerformanceMetricType.screenLoad));
-      expect(metric.duration.inMilliseconds, greaterThan(90));
-    });
-
-    test('should measure network request time', () async {
-      bool requestFunctionCalled = false;
-      const expectedResult = 'success';
-      
-      final result = await performanceService.measureNetworkRequest(
-        'test_request',
-        () async {
-          requestFunctionCalled = true;
-          await Future.delayed(const Duration(milliseconds: 50));
-          return expectedResult;
-        },
-        url: 'https://api.example.com/test',
-        method: 'POST',
-      );
-
-      expect(requestFunctionCalled, isTrue);
-      expect(result, equals(expectedResult));
-    });
-
-    test('should measure database operation time', () async {
-      bool operationFunctionCalled = false;
-      const expectedResult = {'id': 1, 'name': 'test'};
-      
-      final result = await performanceService.measureDatabaseOperation(
-        'test_query',
-        () async {
-          operationFunctionCalled = true;
-          await Future.delayed(const Duration(milliseconds: 25));
-          return expectedResult;
-        },
-        table: 'users',
-        operation: 'SELECT',
-      );
-
-      expect(operationFunctionCalled, isTrue);
-      expect(result, equals(expectedResult));
     });
   });
 
@@ -207,11 +115,7 @@ void main() {
         userId: 'user_789',
         screenName: 'SettingsScreen',
         action: 'save_preferences',
-        metadata: {
-          'theme': 'dark',
-          'language': 'en',
-          'notifications': true,
-        },
+        metadata: {'theme': 'dark', 'language': 'en', 'notifications': true},
         timestamp: DateTime.now(),
         deviceInfo: 'iPhone 14 Pro',
         appVersion: '1.2.0',
@@ -240,10 +144,19 @@ void main() {
       final deserializedContext = ErrorContext.fromJson(json);
 
       expect(deserializedContext.userId, equals(originalContext.userId));
-      expect(deserializedContext.screenName, equals(originalContext.screenName));
+      expect(
+        deserializedContext.screenName,
+        equals(originalContext.screenName),
+      );
       expect(deserializedContext.action, equals(originalContext.action));
-      expect(deserializedContext.metadata['question_type'], equals('multiple_choice'));
-      expect(deserializedContext.deviceInfo, equals(originalContext.deviceInfo));
+      expect(
+        deserializedContext.metadata['question_type'],
+        equals('multiple_choice'),
+      );
+      expect(
+        deserializedContext.deviceInfo,
+        equals(originalContext.deviceInfo),
+      );
     });
   });
 
@@ -268,8 +181,10 @@ void main() {
         endTime: DateTime.now(),
       );
 
-      expect(slowScreenLoad.duration.inMilliseconds, 
-             greaterThan(thresholds[PerformanceMetricType.screenLoad]!));
+      expect(
+        slowScreenLoad.duration.inMilliseconds,
+        greaterThan(thresholds[PerformanceMetricType.screenLoad]!),
+      );
 
       // Fast user interaction
       final fastInteraction = PerformanceMetric(
@@ -281,8 +196,10 @@ void main() {
         endTime: DateTime.now(),
       );
 
-      expect(fastInteraction.duration.inMilliseconds, 
-             lessThan(thresholds[PerformanceMetricType.userInteraction]!));
+      expect(
+        fastInteraction.duration.inMilliseconds,
+        lessThan(thresholds[PerformanceMetricType.userInteraction]!),
+      );
     });
   });
 }

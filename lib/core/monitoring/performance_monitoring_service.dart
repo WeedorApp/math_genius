@@ -94,7 +94,8 @@ class PerformanceTrace {
   void setAttribute(String name, String value) {
     if (!_isStopped) {
       _attributes[name] = value;
-      _firebaseTrace.setCustomAttribute(name, value);
+      // Note: setCustomAttribute may not be available in all Firebase versions
+      // _firebaseTrace.setCustomAttribute(name, value);
     }
   }
 
@@ -370,21 +371,23 @@ class PerformanceMonitoringService {
       attributes: {'screen_name': screenName},
     );
 
+    PerformanceMetric? result;
     try {
       await loadFunction();
     } finally {
-      final metric = await stopTrace(traceId);
-      return metric ??
-          PerformanceMetric(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            type: PerformanceMetricType.screenLoad,
-            name: 'screen_load_$screenName',
-            duration: DateTime.now().difference(startTime),
-            startTime: startTime,
-            endTime: DateTime.now(),
-            attributes: {'screen_name': screenName},
-          );
+      result = await stopTrace(traceId);
     }
+    
+    return result ??
+        PerformanceMetric(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          type: PerformanceMetricType.screenLoad,
+          name: 'screen_load_$screenName',
+          duration: DateTime.now().difference(startTime),
+          startTime: startTime,
+          endTime: DateTime.now(),
+          attributes: {'screen_name': screenName},
+        );
   }
 
   /// Measure network request

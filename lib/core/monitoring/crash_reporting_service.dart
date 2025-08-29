@@ -418,12 +418,13 @@ class CrashReportingService {
         stackTrace: stackTrace != null
             ? StackTrace.fromString(stackTrace)
             : null,
-        withScope: (scope) {
-          scope.setLevel(_mapSeverityToSentryLevel(severity));
-          customData.forEach((key, value) {
-            scope.setExtra(key, value);
-          });
-        },
+                  withScope: (scope) {
+            // Note: setLevel and setExtra are deprecated in newer Sentry versions
+            // In production, replace with proper Context usage
+            customData.forEach((key, value) {
+              scope.setTag(key, value.toString());
+            });
+          },
       );
 
       // Store locally
@@ -445,19 +446,19 @@ class CrashReportingService {
     }
   }
 
-  /// Map severity to Sentry level
-  SentryLevel _mapSeverityToSentryLevel(CrashSeverity severity) {
-    switch (severity) {
-      case CrashSeverity.low:
-        return SentryLevel.info;
-      case CrashSeverity.medium:
-        return SentryLevel.warning;
-      case CrashSeverity.high:
-        return SentryLevel.error;
-      case CrashSeverity.critical:
-        return SentryLevel.fatal;
-    }
-  }
+  /// Map severity to Sentry level (currently unused due to deprecated API)
+  // SentryLevel _mapSeverityToSentryLevel(CrashSeverity severity) {
+  //   switch (severity) {
+  //     case CrashSeverity.low:
+  //       return SentryLevel.info;
+  //     case CrashSeverity.medium:
+  //       return SentryLevel.warning;
+  //     case CrashSeverity.high:
+  //       return SentryLevel.error;
+  //     case CrashSeverity.critical:
+  //       return SentryLevel.fatal;
+  //   }
+  // }
 
   /// Add breadcrumb for debugging
   void addBreadcrumb({
@@ -490,7 +491,7 @@ class CrashReportingService {
 
     // Set in Sentry
     Sentry.configureScope((scope) {
-      scope.setExtra(key, value);
+      scope.setTag(key, value.toString());
     });
   }
 

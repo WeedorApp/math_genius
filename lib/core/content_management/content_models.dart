@@ -485,7 +485,7 @@ class LessonSection {
 class ContentFilter {
   final ContentType? type;
   final ContentDifficulty? difficulty;
-  final List<LearningObjective>? objectives;
+  final List<ContentLearningObjective>? objectives;
   final List<String>? tags;
   final ContentStatus? status;
   final String? author;
