@@ -845,9 +845,71 @@ class EnhancedAITutorService {
       );
 
       await updateStudentProfile(updatedProfile);
+
+      // Save learning progress
+      await _saveLearningProgress(session);
+
+      // Save conversation history
+      await _saveConversationHistory(session);
     } catch (e) {
       if (kDebugMode) {
         print('Error updating student profile from session: $e');
+      }
+    }
+  }
+
+  /// Save learning progress data
+  Future<void> _saveLearningProgress(EnhancedTutorSession session) async {
+    try {
+      final progressData = {
+        'sessionId': session.id,
+        'studentId': session.studentId,
+        'topicsDiscussed': session.topicsDiscussed,
+        'conceptUnderstanding': session.conceptUnderstanding,
+        'engagement': session.studentEngagement,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      if (_hiveBox != null) {
+        await _hiveBox.put(
+          '${_learningProgressKey}_${session.id}',
+          jsonEncode(progressData),
+        );
+      }
+      await _prefs.setString(
+        '${_learningProgressKey}_${session.id}',
+        jsonEncode(progressData),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving learning progress: $e');
+      }
+    }
+  }
+
+  /// Save conversation history
+  Future<void> _saveConversationHistory(EnhancedTutorSession session) async {
+    try {
+      final historyData = {
+        'sessionId': session.id,
+        'messages': session.messages.map((m) => m.toJson()).toList(),
+        'duration': session.sessionDuration.inMinutes,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      if (_hiveBox != null) {
+        await _hiveBox.put(
+          '${_conversationHistoryKey}_${session.id}',
+          jsonEncode(historyData),
+        );
+      }
+      await _prefs.setString(
+        '${_conversationHistoryKey}_${session.id}',
+        jsonEncode(historyData),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving conversation history: $e');
       }
     }
   }

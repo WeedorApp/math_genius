@@ -13,7 +13,9 @@ import '../models/enhanced_game_model.dart';
 /// Provides progression, achievements, power-ups, and adaptive difficulty
 class EnhancedGameService {
   static const String _gameStatsKey = 'enhanced_game_stats';
-  // Future: _achievementsKey, _powerUpsKey, _progressionKey for advanced features
+  static const String _achievementsKey = 'user_achievements';
+  static const String _powerUpsKey = 'user_powerups';
+  static const String _progressionKey = 'game_progression';
 
   final SharedPreferences _prefs;
   final Box? _hiveBox;
@@ -96,20 +98,15 @@ class EnhancedGameService {
       final updatedCategoryMastery = Map<GameCategory, int>.from(
         currentStats.categoryMastery,
       );
-      if (session.category != null) {
-        updatedCategoryMastery[session.category!] =
-            (updatedCategoryMastery[session.category!] ?? 0) + session.score;
-      }
+      updatedCategoryMastery[session.category] =
+          (updatedCategoryMastery[session.category] ?? 0) + session.score;
 
       // Update difficulty progress
       final updatedDifficultyProgress = Map<GameDifficulty, int>.from(
         currentStats.difficultyProgress,
       );
-      if (session.difficulty != null) {
-        updatedDifficultyProgress[session.difficulty!] =
-            (updatedDifficultyProgress[session.difficulty!] ?? 0) +
-            session.score;
-      }
+      updatedDifficultyProgress[session.difficulty] =
+          (updatedDifficultyProgress[session.difficulty] ?? 0) + session.score;
 
       final finalStats = newStats.copyWith(
         categoryMastery: updatedCategoryMastery,
@@ -274,6 +271,12 @@ class EnhancedGameService {
               (newlyUnlocked.length * 500), // Bonus points for achievements
         );
         await updateGameStats(userId, updatedStats);
+
+        // Save achievements data
+        await _saveAchievements(userId, newlyUnlocked);
+
+        // Update progression
+        await _saveProgression(userId, updatedStats);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -286,15 +289,15 @@ class EnhancedGameService {
   bool _checkSpeedDemonRequirement(EnhancedGameSession session) {
     // This would need actual timing data from the session
     // For now, return a simple check based on session duration
-    if (session.endedAt == null) return false;
+    if (session.endedAt == null || session.startedAt == null) return false;
 
-          final duration = session.endedAt!.difference(session.startedAt!).inSeconds;
+    final duration = session.endedAt!.difference(session.startedAt!).inSeconds;
     return session.questions.length >= 5 && duration <= 30;
   }
 
   /// Get available power-ups for user
   Future<List<PowerUp>> getAvailablePowerUps(String userId) async {
-    return [
+    final powerUps = [
       const PowerUp(
         id: 'time_extension',
         name: 'Time Extension',
@@ -336,6 +339,11 @@ class EnhancedGameService {
         effects: {'showHint': true},
       ),
     ];
+
+    // Save power-ups for user
+    await _savePowerUps(userId, powerUps);
+
+    return powerUps;
   }
 
   /// Generate adaptive questions based on user performance
@@ -746,6 +754,88 @@ class EnhancedGameService {
     }
 
     return questions;
+  }
+
+  /// Save achievements data
+  Future<void> _saveAchievements(
+    String userId,
+    List<String> achievements,
+  ) async {
+    try {
+      final achievementsData = {
+        'userId': userId,
+        'achievements': achievements,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      if (_hiveBox != null) {
+        await _hiveBox.put(
+          '${_achievementsKey}_$userId',
+          jsonEncode(achievementsData),
+        );
+      }
+      await _prefs.setString(
+        '${_achievementsKey}_$userId',
+        jsonEncode(achievementsData),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving achievements: $e');
+      }
+    }
+  }
+
+  /// Save power-ups data
+  Future<void> _savePowerUps(String userId, List<PowerUp> powerUps) async {
+    try {
+      final powerUpsData = {
+        'userId': userId,
+        'powerUps': powerUps.map((p) => p.toJson()).toList(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      if (_hiveBox != null) {
+        await _hiveBox.put('${_powerUpsKey}_$userId', jsonEncode(powerUpsData));
+      }
+      await _prefs.setString(
+        '${_powerUpsKey}_$userId',
+        jsonEncode(powerUpsData),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving power-ups: $e');
+      }
+    }
+  }
+
+  /// Save progression data
+  Future<void> _saveProgression(String userId, GameStats stats) async {
+    try {
+      final progressionData = {
+        'userId': userId,
+        'currentLevel': stats.currentLevel.name,
+        'totalPoints': stats.totalPoints,
+        'categoryMastery': stats.categoryMastery.map(
+          (k, v) => MapEntry(k.name, v),
+        ),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      if (_hiveBox != null) {
+        await _hiveBox.put(
+          '${_progressionKey}_$userId',
+          jsonEncode(progressionData),
+        );
+      }
+      await _prefs.setString(
+        '${_progressionKey}_$userId',
+        jsonEncode(progressionData),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving progression: $e');
+      }
+    }
   }
 }
 
