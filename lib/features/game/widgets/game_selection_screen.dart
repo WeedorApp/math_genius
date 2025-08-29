@@ -96,16 +96,14 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
         foregroundColor: colorScheme.onSurface,
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ChatGPTSettingsScreen(),
-                ),
-              );
-            },
+            onPressed: () => context.push('/settings/games'),
+            icon: const Icon(Icons.tune),
+            tooltip: 'Game Settings',
+          ),
+          IconButton(
+            onPressed: () => context.push('/settings'),
             icon: const Icon(Icons.settings),
-            tooltip: 'ChatGPT Settings',
+            tooltip: 'All Settings',
           ),
         ],
       ),

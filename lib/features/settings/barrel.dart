@@ -2,3 +2,4 @@
 
 // Widgets
 export 'widgets/chatgpt_settings_screen.dart';
+export 'widgets/game_preferences_screen.dart';

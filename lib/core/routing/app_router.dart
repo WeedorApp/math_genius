@@ -223,6 +223,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 _buildPage(state, const settings.ChatGPTSettingsScreen()),
           ),
           GoRoute(
+            path: 'games',
+            name: 'game-preferences',
+            pageBuilder: (context, state) =>
+                _buildPage(state, const settings.GamePreferencesScreen()),
+          ),
+          GoRoute(
             path: 'profile',
             name: 'profile-settings',
             pageBuilder: (context, state) =>
@@ -411,6 +417,12 @@ class SettingsDashboardScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
+          ListTile(
+            leading: const Icon(Icons.games),
+            title: const Text('Game Preferences'),
+            subtitle: const Text('Set default game settings'),
+            onTap: () => context.push('/settings/games'),
+          ),
           ListTile(
             leading: const Icon(Icons.smart_toy),
             title: const Text('ChatGPT Settings'),
