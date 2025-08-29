@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,6 +23,9 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
   bool _showResults = false;
   List<Map<String, dynamic>> _questions = [];
   List<int> _userAnswers = [];
+  int _timeRemaining = 30; // Default 30 seconds
+  int _initialTimeLimit = 30; // Store the original time limit
+  Timer? _timer;
 
   @override
   void initState() {
@@ -69,6 +73,11 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     ); // Ensure valid count
     final difficulty = preferences.preferredDifficulty;
     final category = preferences.preferredCategory;
+    final timeLimit = preferences.preferredTimeLimit;
+
+    // Set time limit from preferences
+    _timeRemaining = timeLimit;
+    _initialTimeLimit = timeLimit;
 
     _questions = _generateDynamicQuestions(
       count: questionCount,
@@ -80,6 +89,9 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     if (_questions.isEmpty) {
       _generateQuestions(); // Use default questions
     }
+    
+    // Start timer after questions are generated
+    _startTimer();
   }
 
   void _generateQuestions() {
@@ -389,7 +401,9 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       setState(() {
         _currentQuestionIndex++;
       });
+      _resetTimer();
     } else {
+      _pauseTimer();
       setState(() {
         _showResults = true;
       });
@@ -401,7 +415,42 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       setState(() {
         _currentQuestionIndex--;
       });
+      _resetTimer();
     }
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_timeRemaining > 0) {
+        setState(() {
+          _timeRemaining--;
+        });
+      } else {
+        _timer?.cancel();
+        // Auto-advance to next question when time runs out
+        _nextQuestion();
+      }
+    });
+  }
+
+  void _resetTimer() {
+    _timer?.cancel();
+    // Reset timer based on user preferences
+    setState(() {
+      _timeRemaining = _initialTimeLimit;
+    });
+    _startTimer();
+  }
+
+  void _pauseTimer() {
+    _timer?.cancel();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   void _restartQuiz() {
@@ -495,36 +544,40 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
 
               // Main Content Area - Scrollable
               Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Question Card
-                    _buildModernQuestionCard(currentQuestion, colorScheme),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(
+                    context.adaptiveLayout.contentPadding,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Question Card
+                      _buildModernQuestionCard(currentQuestion, colorScheme),
 
-                    SizedBox(height: context.adaptiveLayout.cardSpacing * 1.5),
+                      SizedBox(
+                        height: context.adaptiveLayout.cardSpacing * 1.5,
+                      ),
 
-                    // Answer Options
-                    _buildAnswerOptionsSection(
-                      currentQuestion,
-                      userAnswer,
-                      colorScheme,
-                    ),
+                      // Answer Options
+                      _buildAnswerOptionsSection(
+                        currentQuestion,
+                        userAnswer,
+                        colorScheme,
+                      ),
 
-                    // Hint Section (if available)
-                    if (currentQuestion.containsKey('hint') &&
-                        currentQuestion['hint'] != null)
-                      _buildHintSection(currentQuestion['hint'], colorScheme),
+                      // Hint Section (if available)
+                      if (currentQuestion.containsKey('hint') &&
+                          currentQuestion['hint'] != null)
+                        _buildHintSection(currentQuestion['hint'], colorScheme),
 
-                    SizedBox(height: context.adaptiveLayout.cardSpacing * 2),
-                  ],
+                      SizedBox(height: context.adaptiveLayout.cardSpacing * 2),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Bottom Navigation
-            _buildBottomNavigation(userAnswer, colorScheme),
+              // Bottom Navigation
+              _buildBottomNavigation(userAnswer, colorScheme),
             ],
           ),
         ),
@@ -574,35 +627,86 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                 ),
               ),
 
-              // Score display
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.stars,
-                      color: colorScheme.onPrimaryContainer,
-                      size: 18,
+              // Score and Timer display
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Timer display
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$_score pts',
-                      style: TextStyle(
-                        color: colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    decoration: BoxDecoration(
+                      color: _timeRemaining <= 10 
+                          ? Colors.red.withValues(alpha: 0.1)
+                          : colorScheme.tertiaryContainer,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _timeRemaining <= 10 
+                            ? Colors.red 
+                            : colorScheme.tertiary,
+                        width: 1,
                       ),
                     ),
-                  ],
-                ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.timer,
+                          color: _timeRemaining <= 10 
+                              ? Colors.red 
+                              : colorScheme.onTertiaryContainer,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${_timeRemaining}s',
+                          style: TextStyle(
+                            color: _timeRemaining <= 10 
+                                ? Colors.red 
+                                : colorScheme.onTertiaryContainer,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 8),
+                  
+                  // Score display
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.stars,
+                          color: colorScheme.onPrimaryContainer,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$_score pts',
+                          style: TextStyle(
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
