@@ -89,7 +89,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     if (_questions.isEmpty) {
       _generateQuestions(); // Use default questions
     }
-    
+
     // Start timer after questions are generated
     _startTimer();
   }
@@ -600,33 +600,50 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       ),
       child: Column(
         children: [
-          // Top row with back button and score
+          // Top row with back button and score/timer
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Back button
-              Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  onPressed: () {
-                    // Safe navigation - check if we can pop, otherwise go to game selection
-                    if (Navigator.of(context).canPop()) {
-                      Navigator.of(context).pop();
-                    } else {
-                      // Use GoRouter to navigate to game selection
-                      context.go('/game-selection');
-                    }
-                  },
-                  icon: Icon(
-                    Icons.arrow_back_ios_new,
-                    color: colorScheme.onSurface,
+              // Clean back button (fixed width)
+              SizedBox(
+                width: 40,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.shadow.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        // Safe navigation - check if we can pop, otherwise go to game selection
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        } else {
+                          // Use GoRouter to navigate to game selection
+                          context.go('/game-selection');
+                        }
+                      },
+                      icon: Icon(
+                        Icons.chevron_left,
+                        color: colorScheme.onSurface,
+                        size: 24,
+                      ),
+                    ),
                   ),
                 ),
               ),
-
+              
               // Score and Timer display
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -638,13 +655,13 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: _timeRemaining <= 10 
+                      color: _timeRemaining <= 10
                           ? Colors.red.withValues(alpha: 0.1)
                           : colorScheme.tertiaryContainer,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: _timeRemaining <= 10 
-                            ? Colors.red 
+                        color: _timeRemaining <= 10
+                            ? Colors.red
                             : colorScheme.tertiary,
                         width: 1,
                       ),
@@ -654,8 +671,8 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                       children: [
                         Icon(
                           Icons.timer,
-                          color: _timeRemaining <= 10 
-                              ? Colors.red 
+                          color: _timeRemaining <= 10
+                              ? Colors.red
                               : colorScheme.onTertiaryContainer,
                           size: 16,
                         ),
@@ -663,8 +680,8 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                         Text(
                           '${_timeRemaining}s',
                           style: TextStyle(
-                            color: _timeRemaining <= 10 
-                                ? Colors.red 
+                            color: _timeRemaining <= 10
+                                ? Colors.red
                                 : colorScheme.onTertiaryContainer,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -673,9 +690,9 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(width: 8),
-                  
+
                   // Score display
                   Container(
                     padding: const EdgeInsets.symmetric(
