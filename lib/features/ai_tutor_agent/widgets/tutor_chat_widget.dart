@@ -30,11 +30,20 @@ class _TutorChatWidgetState extends ConsumerState<TutorChatWidget> {
   final ScrollController _scrollController = ScrollController();
   bool _isListening = false;
   TutorSession? _currentSession;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeSession();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _isInitialized = true;
+      _initializeSession();
+    }
   }
 
   @override
