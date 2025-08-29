@@ -43,3 +43,8 @@ export 'ai/enhanced_ai_tutor_service.dart';
 export 'ai/enhanced_tutor_models.dart';
 export 'ai/adaptive_game_integration.dart';
 export 'ai/adaptive_game_models.dart';
+
+// Production Systems
+export 'monetization/barrel.dart';
+export 'monitoring/barrel.dart';
+export 'content_management/content_models.dart';

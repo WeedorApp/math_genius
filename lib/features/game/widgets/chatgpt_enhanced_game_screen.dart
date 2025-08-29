@@ -1459,7 +1459,11 @@ class _ChatGPTEnhancedGameScreenState
 
               // Answer options
               Expanded(
-                child: _buildAnswerOptions(currentQuestion, themeData, colorScheme),
+                child: _buildAnswerOptions(
+                  currentQuestion,
+                  themeData,
+                  colorScheme,
+                ),
               ),
             ],
           ),
