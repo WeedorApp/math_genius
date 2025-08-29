@@ -622,28 +622,34 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                         ),
                       ],
                     ),
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        // Safe navigation - check if we can pop, otherwise go to game selection
-                        if (Navigator.of(context).canPop()) {
-                          Navigator.of(context).pop();
-                        } else {
-                          // Use GoRouter to navigate to game selection
-                          context.go('/game-selection');
-                        }
-                      },
-                      icon: Icon(
-                        Icons.chevron_left,
-                        color: colorScheme.onSurface,
-                        size: 24,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          // Safe navigation - check if we can pop, otherwise go to game selection
+                          if (Navigator.of(context).canPop()) {
+                            Navigator.of(context).pop();
+                          } else {
+                            // Use GoRouter to navigate to game selection
+                            context.go('/game-selection');
+                          }
+                        },
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: Icon(
+                            Icons.chevron_left,
+                            color: colorScheme.onSurface,
+                            size: 24,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-              
+
               // Score and Timer display
               Row(
                 mainAxisSize: MainAxisSize.min,
