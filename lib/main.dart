@@ -9,6 +9,7 @@ import 'firebase_options.dart';
 // Core modules
 import 'core/barrel.dart';
 import 'core/ai/chatgpt_config.dart';
+import 'features/ai_tutor_agent/services/ai_tutor_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +43,7 @@ void main() async {
     }
     // Initialize Hive
     await Hive.initFlutter();
+    final hiveBox = await Hive.openBox('math_genius_data');
     if (kDebugMode) {
       print('Hive initialized successfully');
     }
@@ -74,6 +76,7 @@ void main() async {
         overrides: [
           themeServiceProvider.overrideWithValue(ThemeService(prefs)),
           sharedPreferencesProvider.overrideWithValue(prefs),
+          aiTutorServiceProvider.overrideWithValue(AITutorService(prefs, hiveBox)),
         ],
         child: const MathGeniusApp(),
       ),
