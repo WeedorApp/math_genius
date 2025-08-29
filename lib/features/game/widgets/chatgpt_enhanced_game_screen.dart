@@ -276,10 +276,12 @@ class _ChatGPTEnhancedGameScreenState
     });
 
     // Safety check to prevent RangeError
-    if (_questions == null || _questions!.isEmpty || _currentQuestionIndex >= _questions!.length) {
+    if (_questions == null ||
+        _questions!.isEmpty ||
+        _currentQuestionIndex >= _questions!.length) {
       return;
     }
-    
+
     final currentQuestion = _questions![_currentQuestionIndex];
     final isCorrect = answerIndex == currentQuestion.correctAnswer;
     final timeBonus = _timeRemaining > 0 ? (_timeRemaining * 0.1).round() : 0;
@@ -1490,14 +1492,12 @@ class _ChatGPTEnhancedGameScreenState
     ColorScheme colorScheme,
   ) {
     // Safety check to prevent RangeError
-    if (_questions == null || _questions!.isEmpty || _currentQuestionIndex >= _questions!.length) {
-      return Scaffold(
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+    if (_questions == null ||
+        _questions!.isEmpty ||
+        _currentQuestionIndex >= _questions!.length) {
+      return Scaffold(body: const Center(child: CircularProgressIndicator()));
     }
-    
+
     final currentQuestion = _questions![_currentQuestionIndex];
 
     return Scaffold(

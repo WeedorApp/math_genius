@@ -246,10 +246,12 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
     });
 
     // Safety check to prevent RangeError
-    if (_questions == null || _questions!.isEmpty || _currentQuestionIndex >= _questions!.length) {
+    if (_questions == null ||
+        _questions!.isEmpty ||
+        _currentQuestionIndex >= _questions!.length) {
       return;
     }
-    
+
     final currentQuestion = _questions![_currentQuestionIndex];
     final isCorrect = answerIndex == currentQuestion.correctAnswer;
 

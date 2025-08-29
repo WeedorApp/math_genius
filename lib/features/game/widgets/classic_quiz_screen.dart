@@ -134,7 +134,12 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
         // If generation fails, add a simple fallback question
         questions.add({
           'question': 'What is ${i + 1} + ${i + 1}?',
-          'options': ['${(i + 1) * 2}', '${(i + 1) * 2 + 1}', '${(i + 1) * 2 - 1}', '${(i + 1) * 2 + 2}'],
+          'options': [
+            '${(i + 1) * 2}',
+            '${(i + 1) * 2 + 1}',
+            '${(i + 1) * 2 - 1}',
+            '${(i + 1) * 2 + 2}',
+          ],
           'correctAnswer': 0,
           'explanation': '${i + 1} + ${i + 1} = ${(i + 1) * 2}',
         });
@@ -391,6 +396,14 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     }
   }
 
+  void _previousQuestion() {
+    if (_currentQuestionIndex > 0) {
+      setState(() {
+        _currentQuestionIndex--;
+      });
+    }
+  }
+
   void _restartQuiz() {
     setState(() {
       _currentQuestionIndex = 0;
@@ -464,164 +477,488 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     final currentQuestion = _questions[_currentQuestionIndex];
     final userAnswer = _userAnswers[_currentQuestionIndex];
 
-    return Padding(
-      padding: DesignSystem.padding24,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Progress indicator with design card
-          GameDesignCards.buildProgressCard(
-            context: context,
-            ref: ref,
-            title:
-                'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
-            subtitle: 'Score: $_score',
-            progress: (_currentQuestionIndex + 1) / _questions.length,
-            color: colorScheme.primary,
-            icon: Icons.quiz,
-          ),
-          SizedBox(height: context.adaptiveLayout.sectionSpacing),
-
-          // Question
-          Text(
-            currentQuestion['question'],
-            style: themeData.typography.headlineMedium.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: context.adaptiveLayout.sectionSpacing),
-
-          // Answer options
-          Expanded(
-            child: Column(
-              children: List.generate(
-                currentQuestion['options'].length,
-                (index) => Padding(
-                  padding: EdgeInsets.only(
-                    bottom: context.adaptiveLayout.cardSpacing,
-                  ),
-                  child: _buildAnswerOption(
-                    themeData,
-                    colorScheme,
-                    currentQuestion['options'][index],
-                    index,
-                    userAnswer,
-                    currentQuestion['correctAnswer'],
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Next button
-          if (userAnswer != -1)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _nextQuestion,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  padding: EdgeInsets.symmetric(
-                    vertical: context.adaptiveLayout.cardSpacing,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  _currentQuestionIndex < _questions.length - 1
-                      ? 'Next Question'
-                      : 'Finish Quiz',
-                  style: themeData.typography.labelLarge.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAnswerOption(
-    MathGeniusThemeData themeData,
-    ColorScheme colorScheme,
-    String option,
-    int index,
-    int userAnswer,
-    int correctAnswer,
-  ) {
-    bool isSelected = userAnswer == index;
-    bool isCorrect = index == correctAnswer;
-    bool showCorrectAnswer = userAnswer != -1;
-
-    Color backgroundColor = colorScheme.surface;
-    Color borderColor = colorScheme.outline;
-
-    if (showCorrectAnswer) {
-      if (isCorrect) {
-        backgroundColor = Colors.green.withValues(alpha: 0.1);
-        borderColor = Colors.green;
-      } else if (isSelected && !isCorrect) {
-        backgroundColor = Colors.red.withValues(alpha: 0.1);
-        borderColor = Colors.red;
-      }
-    } else if (isSelected) {
-      backgroundColor = colorScheme.primary.withValues(alpha: 0.1);
-      borderColor = colorScheme.primary;
-    }
-
-    return InkWell(
-      onTap: userAnswer == -1 ? () => _selectAnswer(index) : null,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(context.adaptiveLayout.contentPadding + 4),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          border: Border.all(color: borderColor, width: 2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: Column(
           children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.surfaceContainerHighest,
-                border: Border.all(
-                  color: isSelected ? colorScheme.primary : colorScheme.outline,
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? Icon(Icons.check, size: 16, color: colorScheme.onPrimary)
-                  : null,
-            ),
-            const SizedBox(width: 16),
+            // Professional Header
+            _buildProfessionalHeader(colorScheme),
+            
+            // Main Content Area - Scrollable
             Expanded(
-              child: Text(
-                option,
-                style: themeData.typography.bodyLarge.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Question Card
+                    _buildModernQuestionCard(currentQuestion, colorScheme),
+                    
+                    SizedBox(height: context.adaptiveLayout.cardSpacing * 1.5),
+                    
+                    // Answer Options
+                    _buildAnswerOptionsSection(currentQuestion, userAnswer, colorScheme),
+                    
+                    // Hint Section (if available)
+                    if (currentQuestion.containsKey('hint') && currentQuestion['hint'] != null)
+                      _buildHintSection(currentQuestion['hint'], colorScheme),
+                    
+                    SizedBox(height: context.adaptiveLayout.cardSpacing * 2),
+                  ],
                 ),
               ),
             ),
-            if (showCorrectAnswer && isCorrect)
-              Icon(Icons.check_circle, color: Colors.green, size: 24),
-            if (showCorrectAnswer && isSelected && !isCorrect)
-              Icon(Icons.cancel, color: Colors.red, size: 24),
+            
+            // Bottom Navigation
+            _buildBottomNavigation(userAnswer, colorScheme),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildProfessionalHeader(ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Top row with back button and score
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Back button
+              Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(
+                    Icons.arrow_back_ios_new,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              
+              // Score display
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.stars,
+                      color: colorScheme.onPrimaryContainer,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$_score pts',
+                      style: TextStyle(
+                        color: colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: context.adaptiveLayout.cardSpacing),
+          
+          // Progress section
+          Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '${((_currentQuestionIndex + 1) / _questions.length * 100).round()}%',
+                    style: TextStyle(
+                      color: colorScheme.primary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Progress bar
+              Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: (_currentQuestionIndex + 1) / _questions.length,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [colorScheme.primary, colorScheme.primaryContainer],
+                      ),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernQuestionCard(Map<String, dynamic> currentQuestion, ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Question type indicator
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.quiz,
+                  size: 16,
+                  color: colorScheme.onSecondaryContainer,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Multiple Choice',
+                  style: TextStyle(
+                    color: colorScheme.onSecondaryContainer,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          SizedBox(height: context.adaptiveLayout.cardSpacing),
+          
+          // Question text
+          Text(
+            currentQuestion['question'],
+            style: TextStyle(
+              color: colorScheme.onSurface,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnswerOptionsSection(Map<String, dynamic> currentQuestion, int userAnswer, ColorScheme colorScheme) {
+    final options = currentQuestion['options'] as List;
+    final correctAnswer = currentQuestion['correctAnswer'] as int;
+    
+    // Determine if we should use grid or list layout based on screen size
+    final screenWidth = MediaQuery.of(context).size.width;
+    final useGridLayout = screenWidth > 600 && options.length <= 4;
+    
+    if (useGridLayout) {
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 3,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: options.length,
+        itemBuilder: (context, index) => _buildModernAnswerCard(
+          options[index],
+          index,
+          userAnswer,
+          correctAnswer,
+          colorScheme,
+        ),
+      );
+    } else {
+      return Column(
+        children: options.asMap().entries.map((entry) {
+          final index = entry.key;
+          final option = entry.value;
+          return Padding(
+            padding: EdgeInsets.only(bottom: context.adaptiveLayout.cardSpacing),
+            child: _buildModernAnswerCard(
+              option,
+              index,
+              userAnswer,
+              correctAnswer,
+              colorScheme,
+            ),
+          );
+        }).toList(),
+      );
+    }
+  }
+
+  Widget _buildModernAnswerCard(String option, int index, int userAnswer, int correctAnswer, ColorScheme colorScheme) {
+    final isSelected = userAnswer == index;
+    final isCorrect = index == correctAnswer;
+    final showResult = userAnswer != -1;
+    final showCorrect = showResult && isCorrect;
+    final showIncorrect = showResult && isSelected && !isCorrect;
+    
+    Color cardColor;
+    Color textColor;
+    Color borderColor;
+    IconData? icon;
+    
+    if (showCorrect) {
+      cardColor = Colors.green.withValues(alpha: 0.1);
+      textColor = Colors.green[700]!;
+      borderColor = Colors.green;
+      icon = Icons.check_circle;
+    } else if (showIncorrect) {
+      cardColor = Colors.red.withValues(alpha: 0.1);
+      textColor = Colors.red[700]!;
+      borderColor = Colors.red;
+      icon = Icons.cancel;
+    } else if (isSelected) {
+      cardColor = colorScheme.primaryContainer;
+      textColor = colorScheme.onPrimaryContainer;
+      borderColor = colorScheme.primary;
+    } else {
+      cardColor = colorScheme.surface;
+      textColor = colorScheme.onSurface;
+      borderColor = colorScheme.outline.withValues(alpha: 0.3);
+    }
+    
+    return GestureDetector(
+      onTap: userAnswer == -1 ? () => _selectAnswer(index) : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: borderColor,
+            width: isSelected || showResult ? 2 : 1,
+          ),
+          boxShadow: [
+            if (isSelected && userAnswer == -1)
+              BoxShadow(
+                color: colorScheme.primary.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Option letter
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: showResult 
+                    ? (showCorrect ? Colors.green : showIncorrect ? Colors.red : colorScheme.primaryContainer)
+                    : colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  String.fromCharCode(65 + index), // A, B, C, D
+                  style: TextStyle(
+                    color: showResult 
+                        ? Colors.white 
+                        : colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(width: 16),
+            
+            // Option text
+            Expanded(
+              child: Text(
+                option,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            
+            // Result icon
+            if (icon != null)
+              Icon(
+                icon,
+                color: showCorrect ? Colors.green : Colors.red,
+                size: 24,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHintSection(String hint, ColorScheme colorScheme) {
+    return Container(
+      margin: EdgeInsets.only(top: context.adaptiveLayout.cardSpacing),
+      padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
+      decoration: BoxDecoration(
+        color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.tertiary.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.lightbulb_outline,
+            color: colorScheme.tertiary,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              hint,
+              style: TextStyle(
+                color: colorScheme.onTertiaryContainer,
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigation(int userAnswer, ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Previous button
+            if (_currentQuestionIndex > 0)
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _previousQuestion,
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Previous'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            
+            if (_currentQuestionIndex > 0)
+              SizedBox(width: context.adaptiveLayout.cardSpacing),
+            
+            // Next/Finish button
+            Expanded(
+              flex: _currentQuestionIndex > 0 ? 1 : 2,
+              child: ElevatedButton.icon(
+                onPressed: userAnswer != -1 ? _nextQuestion : null,
+                icon: Icon(
+                  _currentQuestionIndex < _questions.length - 1 
+                      ? Icons.arrow_forward 
+                      : Icons.check_circle,
+                ),
+                label: Text(
+                  _currentQuestionIndex < _questions.length - 1 
+                      ? 'Next Question' 
+                      : 'Finish Quiz',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: userAnswer != -1 ? 2 : 0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
 
   Widget _buildResultsScreen(
     MathGeniusThemeData themeData,
