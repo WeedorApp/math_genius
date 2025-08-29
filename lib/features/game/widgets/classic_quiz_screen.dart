@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/barrel.dart';
 import '../../../core/theme/design_system.dart';
+import '../models/game_model.dart';
 import 'game_design_cards.dart';
 
 /// Classic Quiz Game Screen
@@ -25,7 +26,34 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
   @override
   void initState() {
     super.initState();
-    _generateQuestions();
+    _initializeGameWithPreferences();
+  }
+
+  Future<void> _initializeGameWithPreferences() async {
+    try {
+      // Load user preferences
+      final prefsService = ref.read(userPreferencesServiceProvider);
+      final preferences = await prefsService.getGamePreferences();
+      
+      // Generate questions based on preferences
+      _generateQuestionsFromPreferences(preferences);
+    } catch (e) {
+      // Fallback to default questions
+      _generateQuestions();
+    }
+  }
+
+  void _generateQuestionsFromPreferences(UserGamePreferences preferences) {
+    // Use preferences to generate appropriate questions
+    final questionCount = preferences.preferredQuestionCount;
+    final difficulty = preferences.preferredDifficulty;
+    final category = preferences.preferredCategory;
+    
+    _questions = _generateDynamicQuestions(
+      count: questionCount,
+      difficulty: difficulty,
+      category: category,
+    );
   }
 
   void _generateQuestions() {
@@ -62,6 +90,197 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       },
     ];
     _userAnswers = List.filled(_questions.length, -1);
+  }
+
+  List<Map<String, dynamic>> _generateDynamicQuestions({
+    required int count,
+    required GameDifficulty difficulty,
+    required GameCategory category,
+  }) {
+    final questions = <Map<String, dynamic>>[];
+    
+    for (int i = 0; i < count; i++) {
+      questions.add(_generateSingleQuestion(category, difficulty, i));
+    }
+    
+    return questions;
+  }
+
+  Map<String, dynamic> _generateSingleQuestion(
+    GameCategory category,
+    GameDifficulty difficulty,
+    int index,
+  ) {
+    final random = (DateTime.now().millisecond + index) % 100;
+    
+    switch (category) {
+      case GameCategory.addition:
+        return _generateAdditionQuestion(difficulty, random);
+      case GameCategory.subtraction:
+        return _generateSubtractionQuestion(difficulty, random);
+      case GameCategory.multiplication:
+        return _generateMultiplicationQuestion(difficulty, random);
+      case GameCategory.division:
+        return _generateDivisionQuestion(difficulty, random);
+      default:
+        return _generateAdditionQuestion(difficulty, random);
+    }
+  }
+
+  Map<String, dynamic> _generateAdditionQuestion(GameDifficulty difficulty, int random) {
+    int a = 1, b = 1;
+    switch (difficulty) {
+      case GameDifficulty.easy:
+        a = (random % 9) + 1;
+        b = (random % 9) + 1;
+        break;
+      case GameDifficulty.normal:
+        a = (random % 50) + 10;
+        b = (random % 50) + 10;
+        break;
+      case GameDifficulty.genius:
+        a = (random % 100) + 50;
+        b = (random % 100) + 50;
+        break;
+      case GameDifficulty.quantum:
+        a = (random % 500) + 100;
+        b = (random % 500) + 100;
+        break;
+    }
+    
+    final correct = a + b;
+    final options = [
+      correct.toString(),
+      (correct + (random % 5) + 1).toString(),
+      (correct - (random % 5) - 1).toString(),
+      (correct + (random % 10) + 5).toString(),
+    ];
+    options.shuffle();
+    final correctIndex = options.indexOf(correct.toString());
+    
+    return {
+      'question': 'What is $a + $b?',
+      'options': options,
+      'correctAnswer': correctIndex,
+      'explanation': '$a + $b = $correct',
+    };
+  }
+
+  Map<String, dynamic> _generateSubtractionQuestion(GameDifficulty difficulty, int random) {
+    int a = 10, b = 1;
+    switch (difficulty) {
+      case GameDifficulty.easy:
+        a = (random % 15) + 10;
+        b = (random % a) + 1;
+        break;
+      case GameDifficulty.normal:
+        a = (random % 80) + 20;
+        b = (random % a) + 1;
+        break;
+      case GameDifficulty.genius:
+        a = (random % 150) + 50;
+        b = (random % a) + 1;
+        break;
+      case GameDifficulty.quantum:
+        a = (random % 800) + 200;
+        b = (random % a) + 1;
+        break;
+    }
+    
+    final correct = a - b;
+    final options = [
+      correct.toString(),
+      (correct + (random % 5) + 1).toString(),
+      (correct - (random % 5) - 1).toString(),
+      (correct + (random % 10) + 5).toString(),
+    ];
+    options.shuffle();
+    final correctIndex = options.indexOf(correct.toString());
+    
+    return {
+      'question': 'What is $a - $b?',
+      'options': options,
+      'correctAnswer': correctIndex,
+      'explanation': '$a - $b = $correct',
+    };
+  }
+
+  Map<String, dynamic> _generateMultiplicationQuestion(GameDifficulty difficulty, int random) {
+    int a = 1, b = 1;
+    switch (difficulty) {
+      case GameDifficulty.easy:
+        a = (random % 10) + 1;
+        b = (random % 10) + 1;
+        break;
+      case GameDifficulty.normal:
+        a = (random % 12) + 1;
+        b = (random % 12) + 1;
+        break;
+      case GameDifficulty.genius:
+        a = (random % 20) + 1;
+        b = (random % 15) + 1;
+        break;
+      case GameDifficulty.quantum:
+        a = (random % 50) + 1;
+        b = (random % 25) + 1;
+        break;
+    }
+    
+    final correct = a * b;
+    final options = [
+      correct.toString(),
+      (correct + (random % 10) + 1).toString(),
+      (correct - (random % 10) - 1).toString(),
+      (correct + (random % 20) + 10).toString(),
+    ];
+    options.shuffle();
+    final correctIndex = options.indexOf(correct.toString());
+    
+    return {
+      'question': 'What is $a × $b?',
+      'options': options,
+      'correctAnswer': correctIndex,
+      'explanation': '$a × $b = $correct',
+    };
+  }
+
+  Map<String, dynamic> _generateDivisionQuestion(GameDifficulty difficulty, int random) {
+    int result = 1, divisor = 2;
+    switch (difficulty) {
+      case GameDifficulty.easy:
+        result = (random % 10) + 1;
+        divisor = (random % 5) + 2;
+        break;
+      case GameDifficulty.normal:
+        result = (random % 20) + 5;
+        divisor = (random % 8) + 2;
+        break;
+      case GameDifficulty.genius:
+        result = (random % 50) + 10;
+        divisor = (random % 12) + 3;
+        break;
+      case GameDifficulty.quantum:
+        result = (random % 100) + 20;
+        divisor = (random % 20) + 5;
+        break;
+    }
+    
+    final dividend = result * divisor;
+    final options = [
+      result.toString(),
+      (result + (random % 5) + 1).toString(),
+      (result - (random % 5) - 1).toString(),
+      (result + (random % 10) + 5).toString(),
+    ];
+    options.shuffle();
+    final correctIndex = options.indexOf(result.toString());
+    
+    return {
+      'question': 'What is $dividend ÷ $divisor?',
+      'options': options,
+      'correctAnswer': correctIndex,
+      'explanation': '$dividend ÷ $divisor = $result',
+    };
   }
 
   void _selectAnswer(int answerIndex) {

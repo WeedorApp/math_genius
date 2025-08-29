@@ -182,39 +182,71 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
     Widget content,
   ) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        subtitle,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      icon, 
+                      color: Theme.of(context).primaryColor,
+                      size: 24,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            content,
-          ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              content,
+            ],
+          ),
         ),
       ),
     );
@@ -222,22 +254,87 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
 
   Widget _buildDifficultySelector() {
     return Wrap(
-      spacing: 8,
+      spacing: 12,
+      runSpacing: 8,
       children: GameDifficulty.values.map((difficulty) {
         final isSelected = _preferences!.preferredDifficulty == difficulty;
-        return FilterChip(
-          label: Text(difficulty.name.toUpperCase()),
-          selected: isSelected,
-          onSelected: (selected) {
-            if (selected) {
-              setState(() {
-                _preferences = _preferences!.copyWith(preferredDifficulty: difficulty);
-              });
-            }
-          },
+        final color = _getDifficultyColor(difficulty);
+        
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          child: FilterChip(
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _getDifficultyIcon(difficulty),
+                  size: 16,
+                  color: isSelected ? Colors.white : color,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _getDifficultyDisplayName(difficulty),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.white : color,
+                  ),
+                ),
+              ],
+            ),
+            selected: isSelected,
+            selectedColor: color,
+            backgroundColor: color.withValues(alpha: 0.1),
+            side: BorderSide(color: color, width: isSelected ? 2 : 1),
+            onSelected: (selected) {
+              if (selected) {
+                setState(() {
+                  _preferences = _preferences!.copyWith(preferredDifficulty: difficulty);
+                });
+              }
+            },
+          ),
         );
       }).toList(),
     );
+  }
+
+  Color _getDifficultyColor(GameDifficulty difficulty) {
+    switch (difficulty) {
+      case GameDifficulty.easy:
+        return Colors.green;
+      case GameDifficulty.normal:
+        return Colors.blue;
+      case GameDifficulty.genius:
+        return Colors.orange;
+      case GameDifficulty.quantum:
+        return Colors.red;
+    }
+  }
+
+  IconData _getDifficultyIcon(GameDifficulty difficulty) {
+    switch (difficulty) {
+      case GameDifficulty.easy:
+        return Icons.sentiment_satisfied;
+      case GameDifficulty.normal:
+        return Icons.trending_up;
+      case GameDifficulty.genius:
+        return Icons.emoji_events;
+      case GameDifficulty.quantum:
+        return Icons.rocket_launch;
+    }
+  }
+
+  String _getDifficultyDisplayName(GameDifficulty difficulty) {
+    switch (difficulty) {
+      case GameDifficulty.easy:
+        return 'Easy';
+      case GameDifficulty.normal:
+        return 'Normal';
+      case GameDifficulty.genius:
+        return 'Genius';
+      case GameDifficulty.quantum:
+        return 'Quantum';
+    }
   }
 
   Widget _buildTopicMixingSelector() {
@@ -479,32 +576,85 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
   }
 
   Widget _buildTimeSettings() {
-    final timeLimits = [15, 30, 45, 60, 90, 120];
+    final timeLimits = [
+      {'time': 15, 'label': 'Quick', 'desc': 'Fast-paced'},
+      {'time': 30, 'label': 'Normal', 'desc': 'Balanced'},
+      {'time': 45, 'label': 'Relaxed', 'desc': 'Take your time'},
+      {'time': 60, 'label': 'Extended', 'desc': 'Think deeply'},
+      {'time': 90, 'label': 'Long', 'desc': 'Complex problems'},
+      {'time': 120, 'label': 'Marathon', 'desc': 'No rush'},
+    ];
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Time per question: ${_preferences!.preferredTimeLimit} seconds',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.timer, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Current: ${_preferences!.preferredTimeLimit} seconds per question',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue[700],
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 8,
-          children: timeLimits.map((time) {
+          runSpacing: 8,
+          children: timeLimits.map((timeData) {
+            final time = timeData['time'] as int;
+            final label = timeData['label'] as String;
+            final desc = timeData['desc'] as String;
             final isSelected = _preferences!.preferredTimeLimit == time;
-            return FilterChip(
-              label: Text('${time}s'),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  setState(() {
-                    _preferences = _preferences!.copyWith(preferredTimeLimit: time);
-                  });
-                }
-              },
+            
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              child: FilterChip(
+                label: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${time}s',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: isSelected ? Colors.white : Colors.blue[700],
+                      ),
+                    ),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSelected ? Colors.white70 : Colors.blue[600],
+                      ),
+                    ),
+                  ],
+                ),
+                selected: isSelected,
+                selectedColor: Colors.blue,
+                backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                side: BorderSide(color: Colors.blue, width: isSelected ? 2 : 1),
+                tooltip: desc,
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() {
+                      _preferences = _preferences!.copyWith(preferredTimeLimit: time);
+                    });
+                  }
+                },
+              ),
             );
           }).toList(),
         ),
