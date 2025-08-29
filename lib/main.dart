@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 
 // Core modules
 import 'core/barrel.dart';
+import 'core/ai/chatgpt_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,9 +62,7 @@ void main() async {
     // Initialize Firebase Analytics
     await FirebaseService.logEvent(
       name: 'app_start',
-      parameters: {
-        'timestamp': DateTime.now().toIso8601String(),
-      },
+      parameters: {'timestamp': DateTime.now().toIso8601String()},
     );
 
     if (kDebugMode) {
@@ -74,6 +73,7 @@ void main() async {
       ProviderScope(
         overrides: [
           themeServiceProvider.overrideWithValue(ThemeService(prefs)),
+          sharedPreferencesProvider.overrideWithValue(prefs),
         ],
         child: const MathGeniusApp(),
       ),
@@ -82,13 +82,9 @@ void main() async {
     if (kDebugMode) {
       print('Error initializing app: $e');
     }
-    
+
     // Run app with minimal initialization on error
-    runApp(
-      ProviderScope(
-        child: const MathGeniusApp(),
-      ),
-    );
+    runApp(ProviderScope(child: const MathGeniusApp()));
   }
 }
 
