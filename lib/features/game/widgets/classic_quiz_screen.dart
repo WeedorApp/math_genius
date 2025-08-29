@@ -586,18 +586,8 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
   }
 
   Widget _buildProfessionalHeader(ColorScheme colorScheme) {
-    return Container(
+    return Padding(
       padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Column(
         children: [
           // Top row with back button and score/timer
@@ -620,6 +610,9 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                   size: 28,
                 ),
               ),
+
+              // Spacer to push score/timer to the right
+              Expanded(child: Container()),
 
               // Score and Timer display
               Row(
