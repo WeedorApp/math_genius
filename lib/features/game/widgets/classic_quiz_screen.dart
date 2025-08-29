@@ -603,50 +603,21 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
           // Top row with back button and score/timer
           Row(
             children: [
-              // Clean back button (fixed width)
-              SizedBox(
-                width: 40,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.shadow.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          // Safe navigation - check if we can pop, otherwise go to game selection
-                          if (Navigator.of(context).canPop()) {
-                            Navigator.of(context).pop();
-                          } else {
-                            // Use GoRouter to navigate to game selection
-                            context.go('/game-selection');
-                          }
-                        },
-                        child: SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: Icon(
-                            Icons.chevron_left,
-                            color: colorScheme.onSurface,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+              // Simple flat back icon
+              GestureDetector(
+                onTap: () {
+                  // Safe navigation - check if we can pop, otherwise go to game selection
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  } else {
+                    // Use GoRouter to navigate to game selection
+                    context.go('/game-selection');
+                  }
+                },
+                child: Icon(
+                  Icons.chevron_left,
+                  color: colorScheme.onSurface,
+                  size: 28,
                 ),
               ),
 
