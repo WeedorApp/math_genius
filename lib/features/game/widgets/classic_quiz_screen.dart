@@ -477,16 +477,24 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     final currentQuestion = _questions[_currentQuestionIndex];
     final userAnswer = _userAnswers[_currentQuestionIndex];
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Professional Header
-            _buildProfessionalHeader(colorScheme),
-            
-            // Main Content Area - Scrollable
-            Expanded(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          // If pop was prevented, navigate to game selection
+          context.go('/game-selection');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Professional Header
+              _buildProfessionalHeader(colorScheme),
+
+              // Main Content Area - Scrollable
+              Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
                 child: Column(
@@ -494,25 +502,31 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                   children: [
                     // Question Card
                     _buildModernQuestionCard(currentQuestion, colorScheme),
-                    
+
                     SizedBox(height: context.adaptiveLayout.cardSpacing * 1.5),
-                    
+
                     // Answer Options
-                    _buildAnswerOptionsSection(currentQuestion, userAnswer, colorScheme),
-                    
+                    _buildAnswerOptionsSection(
+                      currentQuestion,
+                      userAnswer,
+                      colorScheme,
+                    ),
+
                     // Hint Section (if available)
-                    if (currentQuestion.containsKey('hint') && currentQuestion['hint'] != null)
+                    if (currentQuestion.containsKey('hint') &&
+                        currentQuestion['hint'] != null)
                       _buildHintSection(currentQuestion['hint'], colorScheme),
-                    
+
                     SizedBox(height: context.adaptiveLayout.cardSpacing * 2),
                   ],
                 ),
               ),
             ),
-            
+
             // Bottom Navigation
             _buildBottomNavigation(userAnswer, colorScheme),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -544,17 +558,28 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () {
+                    // Safe navigation - check if we can pop, otherwise go to game selection
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      // Use GoRouter to navigate to game selection
+                      context.go('/game-selection');
+                    }
+                  },
                   icon: Icon(
                     Icons.arrow_back_ios_new,
                     color: colorScheme.onSurface,
                   ),
                 ),
               ),
-              
+
               // Score display
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(20),
@@ -581,9 +606,9 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
               ),
             ],
           ),
-          
+
           SizedBox(height: context.adaptiveLayout.cardSpacing),
-          
+
           // Progress section
           Column(
             children: [
@@ -608,9 +633,9 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Progress bar
               Container(
                 height: 6,
@@ -624,7 +649,10 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [colorScheme.primary, colorScheme.primaryContainer],
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.primaryContainer,
+                        ],
                       ),
                       borderRadius: BorderRadius.circular(3),
                     ),
@@ -638,15 +666,16 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     );
   }
 
-  Widget _buildModernQuestionCard(Map<String, dynamic> currentQuestion, ColorScheme colorScheme) {
+  Widget _buildModernQuestionCard(
+    Map<String, dynamic> currentQuestion,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
             color: colorScheme.shadow.withValues(alpha: 0.05),
@@ -685,9 +714,9 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
               ],
             ),
           ),
-          
+
           SizedBox(height: context.adaptiveLayout.cardSpacing),
-          
+
           // Question text
           Text(
             currentQuestion['question'],
@@ -703,14 +732,18 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     );
   }
 
-  Widget _buildAnswerOptionsSection(Map<String, dynamic> currentQuestion, int userAnswer, ColorScheme colorScheme) {
+  Widget _buildAnswerOptionsSection(
+    Map<String, dynamic> currentQuestion,
+    int userAnswer,
+    ColorScheme colorScheme,
+  ) {
     final options = currentQuestion['options'] as List;
     final correctAnswer = currentQuestion['correctAnswer'] as int;
-    
+
     // Determine if we should use grid or list layout based on screen size
     final screenWidth = MediaQuery.of(context).size.width;
     final useGridLayout = screenWidth > 600 && options.length <= 4;
-    
+
     if (useGridLayout) {
       return GridView.builder(
         shrinkWrap: true,
@@ -736,7 +769,9 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
           final index = entry.key;
           final option = entry.value;
           return Padding(
-            padding: EdgeInsets.only(bottom: context.adaptiveLayout.cardSpacing),
+            padding: EdgeInsets.only(
+              bottom: context.adaptiveLayout.cardSpacing,
+            ),
             child: _buildModernAnswerCard(
               option,
               index,
@@ -750,18 +785,24 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     }
   }
 
-  Widget _buildModernAnswerCard(String option, int index, int userAnswer, int correctAnswer, ColorScheme colorScheme) {
+  Widget _buildModernAnswerCard(
+    String option,
+    int index,
+    int userAnswer,
+    int correctAnswer,
+    ColorScheme colorScheme,
+  ) {
     final isSelected = userAnswer == index;
     final isCorrect = index == correctAnswer;
     final showResult = userAnswer != -1;
     final showCorrect = showResult && isCorrect;
     final showIncorrect = showResult && isSelected && !isCorrect;
-    
+
     Color cardColor;
     Color textColor;
     Color borderColor;
     IconData? icon;
-    
+
     if (showCorrect) {
       cardColor = Colors.green.withValues(alpha: 0.1);
       textColor = Colors.green[700]!;
@@ -781,7 +822,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       textColor = colorScheme.onSurface;
       borderColor = colorScheme.outline.withValues(alpha: 0.3);
     }
-    
+
     return GestureDetector(
       onTap: userAnswer == -1 ? () => _selectAnswer(index) : null,
       child: AnimatedContainer(
@@ -810,8 +851,12 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: showResult 
-                    ? (showCorrect ? Colors.green : showIncorrect ? Colors.red : colorScheme.primaryContainer)
+                color: showResult
+                    ? (showCorrect
+                          ? Colors.green
+                          : showIncorrect
+                          ? Colors.red
+                          : colorScheme.primaryContainer)
                     : colorScheme.primaryContainer,
                 shape: BoxShape.circle,
               ),
@@ -819,8 +864,8 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                 child: Text(
                   String.fromCharCode(65 + index), // A, B, C, D
                   style: TextStyle(
-                    color: showResult 
-                        ? Colors.white 
+                    color: showResult
+                        ? Colors.white
                         : colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -828,9 +873,9 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(width: 16),
-            
+
             // Option text
             Expanded(
               child: Text(
@@ -842,7 +887,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                 ),
               ),
             ),
-            
+
             // Result icon
             if (icon != null)
               Icon(
@@ -863,17 +908,11 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       decoration: BoxDecoration(
         color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.tertiary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: colorScheme.tertiary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.lightbulb_outline,
-            color: colorScheme.tertiary,
-            size: 20,
-          ),
+          Icon(Icons.lightbulb_outline, color: colorScheme.tertiary, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -922,23 +961,23 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                   ),
                 ),
               ),
-            
+
             if (_currentQuestionIndex > 0)
               SizedBox(width: context.adaptiveLayout.cardSpacing),
-            
+
             // Next/Finish button
             Expanded(
               flex: _currentQuestionIndex > 0 ? 1 : 2,
               child: ElevatedButton.icon(
                 onPressed: userAnswer != -1 ? _nextQuestion : null,
                 icon: Icon(
-                  _currentQuestionIndex < _questions.length - 1 
-                      ? Icons.arrow_forward 
+                  _currentQuestionIndex < _questions.length - 1
+                      ? Icons.arrow_forward
                       : Icons.check_circle,
                 ),
                 label: Text(
-                  _currentQuestionIndex < _questions.length - 1 
-                      ? 'Next Question' 
+                  _currentQuestionIndex < _questions.length - 1
+                      ? 'Next Question'
                       : 'Finish Quiz',
                 ),
                 style: ElevatedButton.styleFrom(
@@ -957,8 +996,6 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       ),
     );
   }
-
-
 
   Widget _buildResultsScreen(
     MathGeniusThemeData themeData,
