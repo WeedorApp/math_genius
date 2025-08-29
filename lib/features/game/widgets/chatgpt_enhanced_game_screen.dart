@@ -651,36 +651,45 @@ class _ChatGPTEnhancedGameScreenState
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(8),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 32, color: color),
+                child: Icon(icon, size: 24, color: color),
               ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: themeData.typography.titleLarge.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(height: 6),
+              Flexible(
+                child: Text(
+                  title,
+                  style: themeData.typography.titleSmall.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: themeData.typography.bodySmall.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+              const SizedBox(height: 2),
+              Flexible(
+                child: Text(
+                  subtitle,
+                  style: themeData.typography.bodySmall.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontSize: 9,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -1449,7 +1458,9 @@ class _ChatGPTEnhancedGameScreenState
               ),
 
               // Answer options
-              _buildAnswerOptions(currentQuestion, themeData, colorScheme),
+              Expanded(
+                child: _buildAnswerOptions(currentQuestion, themeData, colorScheme),
+              ),
             ],
           ),
         ),
@@ -1697,6 +1708,7 @@ class _ChatGPTEnhancedGameScreenState
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Answer options header
