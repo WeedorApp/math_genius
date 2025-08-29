@@ -9,6 +9,7 @@ import '../../../core/barrel.dart';
 import 'classic_quiz_screen.dart';
 import 'ai_native_game_screen.dart';
 import 'chatgpt_enhanced_game_screen.dart';
+// Quick start functionality integrated inline
 
 // Settings
 import '../../settings/widgets/chatgpt_settings_screen.dart';
@@ -114,9 +115,9 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
+              // Header with Quick Start
               Text(
-                'Select Your Game Mode',
+                'Ready to Play Math? 🎯',
                 style: themeData.typography.headlineMedium.copyWith(
                   color: colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
@@ -125,13 +126,92 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
               ),
               SizedBox(height: context.adaptiveLayout.cardSpacing / 2),
               Text(
-                'Choose from our different game modes',
+                'Jump right in or choose your adventure',
                 style: themeData.typography.bodyMedium.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
               ),
+              
+              SizedBox(height: context.adaptiveLayout.cardSpacing),
+              
+              // Quick Start Button
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.rocket_launch, color: Colors.green, size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Quick Start',
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  'Start playing instantly with smart defaults',
+                                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => setState(() => _selectedGame = GameSelectionMode.classic),
+                              icon: const Icon(Icons.play_arrow),
+                              label: const Text('Start Classic'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => setState(() => _selectedGame = GameSelectionMode.aiNative),
+                              icon: const Icon(Icons.psychology),
+                              label: const Text('AI Game'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               SizedBox(height: context.adaptiveLayout.sectionSpacing),
+              
+              const Divider(),
+              
+              SizedBox(height: context.adaptiveLayout.cardSpacing),
+              
+              Text(
+                'More Game Options',
+                style: themeData.typography.titleMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              SizedBox(height: context.adaptiveLayout.cardSpacing),
+              
               // Game Options
               GridView.count(
                 shrinkWrap: true,

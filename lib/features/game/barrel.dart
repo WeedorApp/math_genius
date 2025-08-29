@@ -16,6 +16,7 @@ export 'widgets/chatgpt_enhanced_game_screen.dart';
 export 'widgets/classic_quiz_screen.dart';
 export 'widgets/game_design_cards.dart';
 export 'widgets/game_selection_screen.dart';
+export 'widgets/quick_start_game_widget.dart';
 // export 'widgets/enhanced_game_screen.dart'; // Temporarily disabled
 
 // Responsive Widgets
