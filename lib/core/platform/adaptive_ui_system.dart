@@ -481,7 +481,10 @@ class AdaptiveUISystem {
                   ? colorScheme.error
                   : colorScheme.inverseSurface,
               action: actionLabel != null && onActionPressed != null
-                  ? SnackBarAction(label: actionLabel, onPressed: onActionPressed)
+                  ? SnackBarAction(
+                      label: actionLabel,
+                      onPressed: onActionPressed,
+                    )
                   : null,
             ),
           );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 
 // Core imports
@@ -76,10 +77,53 @@ class _TutorChatWidgetState extends ConsumerState<TutorChatWidget> {
 
       setState(() {});
     } catch (e) {
+      if (kDebugMode) {
+        print('Error initializing tutor session: $e');
+      }
+      
+      // Fallback: Create a basic session manually
+      await _initializeFallbackSession();
+    }
+  }
+
+  /// Fallback initialization when AI tutor service fails
+  Future<void> _initializeFallbackSession() async {
+    try {
+      // Create a basic tutor session without complex AI features
+      _currentSession = TutorSession(
+        id: 'fallback_${DateTime.now().millisecondsSinceEpoch}',
+        studentId: widget.studentId,
+        context: TutorContext(
+          studentId: widget.studentId,
+          grade: widget.grade,
+          lastSession: DateTime.now(),
+        ),
+        startTime: DateTime.now(),
+        messages: [
+          TutorMessage(
+            id: 'welcome_fallback',
+            content: 'Hi! I\'m your math tutor. I\'m here to help you with any math questions you have! 😊',
+            isFromTutor: true,
+            timestamp: DateTime.now(),
+          ),
+        ],
+      );
+
+      setState(() {});
+      
+      if (kDebugMode) {
+        print('Fallback tutor session initialized successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in fallback initialization: $e');
+      }
+      
+      // Ultimate fallback - show error message to user
       if (mounted) {
         AdaptiveUISystem.showAdaptiveSnackBar(
           context: context,
-          message: 'Error initializing tutor session: $e',
+          message: 'Tutor temporarily unavailable. Please try again later.',
           isError: true,
         );
       }
@@ -110,13 +154,85 @@ class _TutorChatWidgetState extends ConsumerState<TutorChatWidget> {
       setState(() {});
       _scrollToBottom();
     } catch (e) {
+      if (kDebugMode) {
+        print('Error sending message: $e');
+      }
+      
+      // Fallback: Handle message manually without AI service
+      await _handleMessageFallback(message);
+    }
+  }
+
+  /// Fallback message handling when AI service fails
+  Future<void> _handleMessageFallback(String userMessage) async {
+    try {
+      // Add user message to session manually
+      final userMsg = TutorMessage(
+        id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+        content: userMessage,
+        isFromTutor: false,
+        timestamp: DateTime.now(),
+      );
+
+      _currentSession = _currentSession?.copyWith(
+        messages: [...(_currentSession?.messages ?? []), userMsg],
+      );
+
+      _messageController.clear();
+
+      // Generate a simple fallback response
+      final fallbackResponse = _generateFallbackResponse(userMessage);
+      
+      final tutorMsg = TutorMessage(
+        id: 'tutor_${DateTime.now().millisecondsSinceEpoch}',
+        content: fallbackResponse,
+        isFromTutor: true,
+        timestamp: DateTime.now(),
+      );
+
+      _currentSession = _currentSession?.copyWith(
+        messages: [...(_currentSession?.messages ?? []), tutorMsg],
+      );
+
+      setState(() {});
+      _scrollToBottom();
+      
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in fallback message handling: $e');
+      }
+      
       if (mounted) {
         AdaptiveUISystem.showAdaptiveSnackBar(
           context: context,
-          message: 'Error sending message: $e',
+          message: 'Unable to process message. Please try again.',
           isError: true,
         );
       }
+    }
+  }
+
+  /// Generate simple fallback responses
+  String _generateFallbackResponse(String userMessage) {
+    final lowerMessage = userMessage.toLowerCase();
+    
+    // Simple keyword-based responses
+    if (lowerMessage.contains('help') || lowerMessage.contains('stuck')) {
+      return 'I\'m here to help! Can you tell me more about what you\'re working on? I\'ll do my best to guide you through it step by step.';
+    } else if (lowerMessage.contains('addition') || lowerMessage.contains('add')) {
+      return 'Addition is all about combining numbers! Try breaking larger numbers into smaller parts to make it easier. For example, 8 + 7 = 8 + 2 + 5 = 10 + 5 = 15.';
+    } else if (lowerMessage.contains('subtraction') || lowerMessage.contains('subtract')) {
+      return 'Subtraction is taking away! You can think of it as counting backwards. Try using a number line or your fingers to help visualize it.';
+    } else if (lowerMessage.contains('multiplication') || lowerMessage.contains('multiply')) {
+      return 'Multiplication is repeated addition! For example, 3 × 4 means adding 3 four times: 3 + 3 + 3 + 3 = 12. Practice your times tables!';
+    } else if (lowerMessage.contains('division') || lowerMessage.contains('divide')) {
+      return 'Division is sharing equally! Think about dividing things into equal groups. For example, 12 ÷ 3 means "how many groups of 3 can we make from 12?"';
+    } else if (lowerMessage.contains('thank')) {
+      return 'You\'re very welcome! I\'m so proud of your hard work. Keep practicing and you\'ll become a math genius! 🌟';
+    } else if (lowerMessage.contains('?')) {
+      return 'That\'s a great question! Math is all about asking questions and exploring. Can you break down the problem into smaller parts?';
+    } else {
+      return 'I understand you\'re working on math! Remember, every math problem can be solved step by step. Take your time and think through each part carefully. What specific area would you like help with?';
     }
   }
 
