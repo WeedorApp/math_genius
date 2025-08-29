@@ -1,10 +1,84 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
+
+// Stub implementations for crash reporting (enable in production)
+class FirebaseCrashlytics {
+  static FirebaseCrashlytics instance = FirebaseCrashlytics._();
+  FirebaseCrashlytics._();
+  
+  Future<void> setCrashlyticsCollectionEnabled(bool enabled) async {}
+  Future<void> setUserIdentifier(String identifier) async {}
+  Future<void> setCustomKey(String key, dynamic value) async {}
+  Future<void> recordError(dynamic exception, StackTrace? stack, {bool? fatal, Iterable<String>? information}) async {}
+  void recordFlutterFatalError(FlutterErrorDetails details) {}
+}
+
+class SentryFlutter {
+  static Future<void> init(Function(SentryOptions) optionsConfiguration) async {}
+}
+
+class SentryOptions {
+  String? dsn;
+  bool? debug;
+  String? environment;
+  String? release;
+  double? tracesSampleRate;
+  bool? enableAutoSessionTracking;
+  bool? attachStacktrace;
+  bool? sendDefaultPii;
+  Function(SentryEvent, dynamic)? beforeSend;
+}
+
+class Sentry {
+  static Future<void> captureException(dynamic exception, {StackTrace? stackTrace, Function(Scope)? withScope}) async {}
+  static void configureScope(Function(Scope) scopeCallback) {}
+  static void addBreadcrumb(Breadcrumb breadcrumb) {}
+}
+
+class SentryEvent {
+  final SentryUser? user;
+  
+  SentryEvent({this.user});
+  
+  SentryEvent copyWith({SentryUser? user}) {
+    return SentryEvent(user: user ?? this.user);
+  }
+}
+
+class SentryUser {
+  final String? id;
+  final String? email;
+  final String? ipAddress;
+  
+  SentryUser({this.id, this.email, this.ipAddress});
+  
+  SentryUser copyWith({String? id, String? email, String? ipAddress}) {
+    return SentryUser(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      ipAddress: ipAddress ?? this.ipAddress,
+    );
+  }
+}
+
+class Scope {
+  void setUser(SentryUser user) {}
+  void setTag(String key, String value) {}
+}
+
+class Breadcrumb {
+  final String message;
+  final String category;
+  final SentryLevel level;
+  final Map<String, dynamic>? data;
+  
+  Breadcrumb({required this.message, required this.category, required this.level, this.data});
+}
+
+enum SentryLevel { debug, info, warning, error, fatal }
 
 /// Crash severity levels
 enum CrashSeverity { low, medium, high, critical }
@@ -418,13 +492,13 @@ class CrashReportingService {
         stackTrace: stackTrace != null
             ? StackTrace.fromString(stackTrace)
             : null,
-                  withScope: (scope) {
-            // Note: setLevel and setExtra are deprecated in newer Sentry versions
-            // In production, replace with proper Context usage
-            customData.forEach((key, value) {
-              scope.setTag(key, value.toString());
-            });
-          },
+        withScope: (scope) {
+          // Note: setLevel and setExtra are deprecated in newer Sentry versions
+          // In production, replace with proper Context usage
+          customData.forEach((key, value) {
+            scope.setTag(key, value.toString());
+          });
+        },
       );
 
       // Store locally

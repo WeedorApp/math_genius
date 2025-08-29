@@ -176,8 +176,14 @@ void main() {
       expect(deserializedConfig.adUnitId, equals(originalConfig.adUnitId));
       expect(deserializedConfig.placement, equals(originalConfig.placement));
       expect(deserializedConfig.isEnabled, equals(originalConfig.isEnabled));
-      expect(deserializedConfig.refreshIntervalSeconds, equals(originalConfig.refreshIntervalSeconds));
-      expect(deserializedConfig.respectPrivacy, equals(originalConfig.respectPrivacy));
+      expect(
+        deserializedConfig.refreshIntervalSeconds,
+        equals(originalConfig.refreshIntervalSeconds),
+      );
+      expect(
+        deserializedConfig.respectPrivacy,
+        equals(originalConfig.respectPrivacy),
+      );
     });
   });
 }

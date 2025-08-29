@@ -1,10 +1,66 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'monetization_models.dart';
+
+// Stub implementations for in-app purchase (enable in production)
+class InAppPurchase {
+  static InAppPurchase instance = InAppPurchase._();
+  InAppPurchase._();
+  
+  Stream<List<PurchaseDetails>> get purchaseStream => const Stream.empty();
+  Future<bool> isAvailable() async => false;
+  Future<ProductDetailsResponse> queryProductDetails(Set<String> productIds) async {
+    return ProductDetailsResponse(productDetails: [], notFoundIDs: productIds.toList());
+  }
+  Future<bool> buyNonConsumable({required PurchaseParam purchaseParam}) async => false;
+  Future<void> restorePurchases() async {}
+  Future<void> completePurchase(PurchaseDetails purchaseDetails) async {}
+}
+
+class PurchaseDetails {
+  final String? purchaseID;
+  final String productID;
+  final PurchaseStatus status;
+  final String? transactionDate;
+  final String? error;
+  final bool pendingCompletePurchase;
+  
+  PurchaseDetails({
+    this.purchaseID,
+    required this.productID,
+    required this.status,
+    this.transactionDate,
+    this.error,
+    this.pendingCompletePurchase = false,
+  });
+}
+
+enum PurchaseStatus { pending, purchased, error, restored, canceled }
+
+class ProductDetailsResponse {
+  final List<ProductDetails> productDetails;
+  final List<String> notFoundIDs;
+  
+  ProductDetailsResponse({required this.productDetails, required this.notFoundIDs});
+}
+
+class ProductDetails {
+  final String id;
+  final String title;
+  final String description;
+  final String price;
+  
+  ProductDetails({required this.id, required this.title, required this.description, required this.price});
+}
+
+class PurchaseParam {
+  final ProductDetails productDetails;
+  
+  PurchaseParam({required this.productDetails});
+}
 
 /// Subscription service for managing premium subscriptions
 class SubscriptionService {

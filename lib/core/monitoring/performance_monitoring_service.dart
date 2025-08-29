@@ -1,9 +1,27 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_performance/firebase_performance.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
+
+// Stub implementations for Firebase Performance (enable in production)
+class FirebasePerformance {
+  static FirebasePerformance instance = FirebasePerformance._();
+  FirebasePerformance._();
+  
+  Future<void> setPerformanceCollectionEnabled(bool enabled) async {}
+  Trace newTrace(String name) => Trace._(name);
+}
+
+class Trace {
+  final String name;
+  Trace._(this.name);
+  
+  Future<void> start() async {}
+  Future<void> stop() async {}
+  void setMetric(String name, int value) {}
+  void incrementMetric(String name, int value) {}
+}
 
 /// Performance metric types
 enum PerformanceMetricType {
@@ -377,7 +395,7 @@ class PerformanceMonitoringService {
     } finally {
       result = await stopTrace(traceId);
     }
-    
+
     return result ??
         PerformanceMetric(
           id: DateTime.now().millisecondsSinceEpoch.toString(),

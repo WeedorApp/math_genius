@@ -1,10 +1,138 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'monetization_models.dart';
+
+// Stub implementations for Google Mobile Ads (enable in production)
+class MobileAds {
+  static MobileAds instance = MobileAds._();
+  MobileAds._();
+  
+  Future<void> initialize() async {}
+  Future<void> updateRequestConfiguration(RequestConfiguration config) async {}
+}
+
+class RequestConfiguration {
+  final List<String> testDeviceIds;
+  final TagForChildDirectedTreatment tagForChildDirectedTreatment;
+  final TagForUnderAgeOfConsent tagForUnderAgeOfConsent;
+  final MaxAdContentRating maxAdContentRating;
+  
+  RequestConfiguration({
+    required this.testDeviceIds,
+    required this.tagForChildDirectedTreatment,
+    required this.tagForUnderAgeOfConsent,
+    required this.maxAdContentRating,
+  });
+}
+
+enum TagForChildDirectedTreatment { yes, no, unspecified }
+enum TagForUnderAgeOfConsent { yes, no, unspecified }
+enum MaxAdContentRating { g, pg, t, ma }
+
+class AdSize {
+  static const AdSize banner = AdSize._(320, 50);
+  final int width;
+  final int height;
+  const AdSize._(this.width, this.height);
+}
+
+class AdRequest {
+  const AdRequest();
+}
+
+class BannerAd {
+  final String adUnitId;
+  final AdSize size;
+  final AdRequest request;
+  final BannerAdListener listener;
+  
+  BannerAd({required this.adUnitId, required this.size, required this.request, required this.listener});
+  
+  Future<void> load() async {}
+  void dispose() {}
+}
+
+class InterstitialAd {
+  static Future<void> load({
+    required String adUnitId,
+    required AdRequest request,
+    required InterstitialAdLoadCallback adLoadCallback,
+  }) async {}
+  
+  Future<void> show() async {}
+  void dispose() {}
+  FullScreenContentCallback? fullScreenContentCallback;
+}
+
+class RewardedAd {
+  static Future<void> load({
+    required String adUnitId,
+    required AdRequest request,
+    required RewardedAdLoadCallback rewardedAdLoadCallback,
+  }) async {}
+  
+  Future<void> show({required Function(dynamic, RewardItem) onUserEarnedReward}) async {}
+  void dispose() {}
+  FullScreenContentCallback? fullScreenContentCallback;
+}
+
+class NativeAd {
+  void dispose() {}
+}
+
+class BannerAdListener {
+  final Function(dynamic)? onAdLoaded;
+  final Function(dynamic, LoadAdError)? onAdFailedToLoad;
+  final Function(dynamic)? onAdOpened;
+  final Function(dynamic)? onAdClicked;
+  
+  BannerAdListener({this.onAdLoaded, this.onAdFailedToLoad, this.onAdOpened, this.onAdClicked});
+}
+
+class InterstitialAdLoadCallback {
+  final Function(InterstitialAd)? onAdLoaded;
+  final Function(LoadAdError)? onAdFailedToLoad;
+  
+  InterstitialAdLoadCallback({this.onAdLoaded, this.onAdFailedToLoad});
+}
+
+class RewardedAdLoadCallback {
+  final Function(RewardedAd)? onAdLoaded;
+  final Function(LoadAdError)? onAdFailedToLoad;
+  
+  RewardedAdLoadCallback({this.onAdLoaded, this.onAdFailedToLoad});
+}
+
+class FullScreenContentCallback {
+  final Function(dynamic)? onAdShowedFullScreenContent;
+  final Function(dynamic)? onAdDismissedFullScreenContent;
+  final Function(dynamic, dynamic)? onAdFailedToShowFullScreenContent;
+  final Function(dynamic)? onAdClicked;
+  
+  FullScreenContentCallback({
+    this.onAdShowedFullScreenContent,
+    this.onAdDismissedFullScreenContent,
+    this.onAdFailedToShowFullScreenContent,
+    this.onAdClicked,
+  });
+}
+
+class LoadAdError {
+  final int code;
+  final String message;
+  
+  LoadAdError({required this.code, required this.message});
+}
+
+class RewardItem {
+  final int amount;
+  final String type;
+  
+  RewardItem({required this.amount, required this.type});
+}
 
 /// Ad service for managing Google AdMob advertisements
 class AdService {
