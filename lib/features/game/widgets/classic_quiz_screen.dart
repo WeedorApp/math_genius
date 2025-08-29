@@ -63,7 +63,10 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
 
   void _generateQuestionsFromPreferences(UserGamePreferences preferences) {
     // Use preferences to generate appropriate questions
-    final questionCount = preferences.preferredQuestionCount;
+    final questionCount = preferences.preferredQuestionCount.clamp(
+      1,
+      50,
+    ); // Ensure valid count
     final difficulty = preferences.preferredDifficulty;
     final category = preferences.preferredCategory;
 
@@ -72,6 +75,11 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       difficulty: difficulty,
       category: category,
     );
+
+    // Fallback if dynamic generation fails
+    if (_questions.isEmpty) {
+      _generateQuestions(); // Use default questions
+    }
   }
 
   void _generateQuestions() {
@@ -116,9 +124,21 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     required GameCategory category,
   }) {
     final questions = <Map<String, dynamic>>[];
+    final safeCount = count.clamp(1, 50); // Ensure valid count
 
-    for (int i = 0; i < count; i++) {
-      questions.add(_generateSingleQuestion(category, difficulty, i));
+    for (int i = 0; i < safeCount; i++) {
+      try {
+        final question = _generateSingleQuestion(category, difficulty, i);
+        questions.add(question);
+      } catch (e) {
+        // If generation fails, add a simple fallback question
+        questions.add({
+          'question': 'What is ${i + 1} + ${i + 1}?',
+          'options': ['${(i + 1) * 2}', '${(i + 1) * 2 + 1}', '${(i + 1) * 2 - 1}', '${(i + 1) * 2 + 2}'],
+          'correctAnswer': 0,
+          'explanation': '${i + 1} + ${i + 1} = ${(i + 1) * 2}',
+        });
+      }
     }
 
     return questions;
@@ -436,6 +456,11 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     MathGeniusThemeData themeData,
     ColorScheme colorScheme,
   ) {
+    // Safety check to prevent RangeError
+    if (_questions.isEmpty || _currentQuestionIndex >= _questions.length) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     final currentQuestion = _questions[_currentQuestionIndex];
     final userAnswer = _userAnswers[_currentQuestionIndex];
 

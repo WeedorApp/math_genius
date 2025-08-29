@@ -53,12 +53,13 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
 
   String _getPreferencesSummary() {
     if (_currentPreferences == null) return '';
-    
-    final difficulty = _currentPreferences!.preferredDifficulty.name.toUpperCase();
+
+    final difficulty = _currentPreferences!.preferredDifficulty.name
+        .toUpperCase();
     final category = _currentPreferences!.preferredCategory.name;
     final questions = _currentPreferences!.preferredQuestionCount;
     final time = _currentPreferences!.preferredTimeLimit;
-    
+
     return '$difficulty • $category • $questions questions • ${time}s per question';
   }
 

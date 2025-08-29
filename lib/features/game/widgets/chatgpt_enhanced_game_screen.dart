@@ -71,21 +71,25 @@ class _ChatGPTEnhancedGameScreenState
     try {
       final prefsService = ref.read(userPreferencesServiceProvider);
       final preferences = await prefsService.getGamePreferences();
-      
+
       // Auto-configure based on user preferences
       setState(() {
-        _selectedDifficulty = _mapGameDifficultyToAI(preferences.preferredDifficulty);
+        _selectedDifficulty = _mapGameDifficultyToAI(
+          preferences.preferredDifficulty,
+        );
         _selectedTopic = preferences.preferredCategory;
         _selectedQuestionCount = preferences.preferredQuestionCount;
         _timeRemaining = preferences.preferredTimeLimit;
-        
+
         // Skip selection screens if preferences are set
-        if (_selectedDifficulty != null && _selectedTopic != null && _selectedQuestionCount != null) {
+        if (_selectedDifficulty != null &&
+            _selectedTopic != null &&
+            _selectedQuestionCount != null) {
           _showDifficultySelection = false;
           _showTopicSelection = false;
           _showQuestionCountSelection = false;
           _showTimeLimitSelection = false;
-          
+
           // Auto-start the game
           _initializeChatGPTGame();
         }
@@ -271,6 +275,11 @@ class _ChatGPTEnhancedGameScreenState
       _selectedAnswerIndex = answerIndex;
     });
 
+    // Safety check to prevent RangeError
+    if (_questions == null || _questions!.isEmpty || _currentQuestionIndex >= _questions!.length) {
+      return;
+    }
+    
     final currentQuestion = _questions![_currentQuestionIndex];
     final isCorrect = answerIndex == currentQuestion.correctAnswer;
     final timeBonus = _timeRemaining > 0 ? (_timeRemaining * 0.1).round() : 0;
@@ -1480,6 +1489,15 @@ class _ChatGPTEnhancedGameScreenState
     MathGeniusThemeData themeData,
     ColorScheme colorScheme,
   ) {
+    // Safety check to prevent RangeError
+    if (_questions == null || _questions!.isEmpty || _currentQuestionIndex >= _questions!.length) {
+      return Scaffold(
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
     final currentQuestion = _questions![_currentQuestionIndex];
 
     return Scaffold(
