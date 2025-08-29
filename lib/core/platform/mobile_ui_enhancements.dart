@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'platform_service.dart';
@@ -301,27 +302,29 @@ class MobileUIEnhancements {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: duration,
-        backgroundColor: isError
-            ? colorScheme.error
-            : colorScheme.inverseSurface,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_mobileBorderRadius),
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: duration,
+          backgroundColor: isError
+              ? colorScheme.error
+              : colorScheme.inverseSurface,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(_mobileBorderRadius),
+          ),
+          action: actionLabel != null && onActionPressed != null
+              ? SnackBarAction(
+                  label: actionLabel,
+                  onPressed: onActionPressed,
+                  textColor: colorScheme.inversePrimary,
+                )
+              : null,
         ),
-        action: actionLabel != null && onActionPressed != null
-            ? SnackBarAction(
-                label: actionLabel,
-                onPressed: onActionPressed,
-                textColor: colorScheme.inversePrimary,
-              )
-            : null,
-      ),
-    );
+      );
+    });
   }
 }
 

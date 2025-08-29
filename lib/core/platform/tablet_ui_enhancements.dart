@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../theme/theme_service.dart';
@@ -438,28 +439,30 @@ class TabletUIEnhancements {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: duration,
-        backgroundColor: isError
-            ? colorScheme.error
-            : colorScheme.inverseSurface,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_tabletBorderRadius),
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: duration,
+          backgroundColor: isError
+              ? colorScheme.error
+              : colorScheme.inverseSurface,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(_tabletBorderRadius),
+          ),
+          width: 400, // Fixed width for tablet
+          action: actionLabel != null && onActionPressed != null
+              ? SnackBarAction(
+                  label: actionLabel,
+                  onPressed: onActionPressed,
+                  textColor: colorScheme.inversePrimary,
+                )
+              : null,
         ),
-        width: 400, // Fixed width for tablet
-        action: actionLabel != null && onActionPressed != null
-            ? SnackBarAction(
-                label: actionLabel,
-                onPressed: onActionPressed,
-                textColor: colorScheme.inversePrimary,
-              )
-            : null,
-      ),
-    );
+      );
+    });
   }
 }
 

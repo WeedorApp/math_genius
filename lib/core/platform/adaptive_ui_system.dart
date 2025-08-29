@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/scheduler.dart';
 
 import 'platform_service.dart';
 
@@ -471,18 +472,20 @@ class AdaptiveUISystem {
       case UIMode.web:
         // Use standard snackbar for desktop/web
         final colorScheme = Theme.of(context).colorScheme;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            duration: duration,
-            backgroundColor: isError
-                ? colorScheme.error
-                : colorScheme.inverseSurface,
-            action: actionLabel != null && onActionPressed != null
-                ? SnackBarAction(label: actionLabel, onPressed: onActionPressed)
-                : null,
-          ),
-        );
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              duration: duration,
+              backgroundColor: isError
+                  ? colorScheme.error
+                  : colorScheme.inverseSurface,
+              action: actionLabel != null && onActionPressed != null
+                  ? SnackBarAction(label: actionLabel, onPressed: onActionPressed)
+                  : null,
+            ),
+          );
+        });
         break;
     }
   }
