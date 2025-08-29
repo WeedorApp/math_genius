@@ -152,7 +152,7 @@ class AINativeGameService {
     Random random,
   ) {
     final complexity = difficulty.complexityMultiplier;
-    final maxNumber = (100 * complexity).round();
+    final maxNumber = ((100 * complexity).round()).clamp(1, 1000); // Ensure minimum 1
 
     final a = random.nextInt(maxNumber) + 1;
     final b = random.nextInt(maxNumber) + 1;
@@ -181,10 +181,10 @@ class AINativeGameService {
     Random random,
   ) {
     final complexity = difficulty.complexityMultiplier;
-    final maxNumber = (100 * complexity).round();
+    final maxNumber = ((100 * complexity).round()).clamp(2, 1000); // Ensure minimum 2
 
     final a = random.nextInt(maxNumber) + 1;
-    final b = random.nextInt(a) + 1; // Ensure positive result
+    final b = random.nextInt(a.clamp(1, maxNumber)) + 1; // Ensure positive result
     final answer = a - b;
 
     // Generate wrong answers
@@ -210,7 +210,7 @@ class AINativeGameService {
     Random random,
   ) {
     final complexity = difficulty.complexityMultiplier;
-    final maxNumber = (20 * complexity).round();
+    final maxNumber = ((20 * complexity).round()).clamp(1, 50); // Ensure minimum 1
 
     final a = random.nextInt(maxNumber) + 1;
     final b = random.nextInt(maxNumber) + 1;
@@ -239,7 +239,7 @@ class AINativeGameService {
     Random random,
   ) {
     final complexity = difficulty.complexityMultiplier;
-    final maxNumber = (50 * complexity).round();
+    final maxNumber = ((50 * complexity).round()).clamp(1, 100); // Ensure minimum 1
 
     final b = random.nextInt(maxNumber) + 1;
     final answer = random.nextInt(maxNumber) + 1;
@@ -298,14 +298,26 @@ class AINativeGameService {
   ) {
     final wrongAnswers = <String>[];
     final usedAnswers = <int>{correctAnswer};
+    int attempts = 0;
+    const maxAttempts = 100; // Prevent infinite loops
 
-    while (wrongAnswers.length < count) {
+    while (wrongAnswers.length < count && attempts < maxAttempts) {
+      attempts++;
       final wrongAnswer = correctAnswer + random.nextInt(20) - 10;
       if (wrongAnswer != correctAnswer &&
           !usedAnswers.contains(wrongAnswer) &&
           wrongAnswer > 0) {
         wrongAnswers.add(wrongAnswer.toString());
         usedAnswers.add(wrongAnswer);
+      }
+    }
+
+    // If we still don't have enough answers, generate simple fallbacks
+    while (wrongAnswers.length < count) {
+      final fallbackAnswer = correctAnswer + wrongAnswers.length + 1;
+      if (!usedAnswers.contains(fallbackAnswer)) {
+        wrongAnswers.add(fallbackAnswer.toString());
+        usedAnswers.add(fallbackAnswer);
       }
     }
 

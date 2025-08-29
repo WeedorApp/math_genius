@@ -42,10 +42,10 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
         // Fallback if preferences are invalid
         _generateQuestions();
       }
-      
+
       // Ensure we have a valid user answers list
       _userAnswers = List.filled(_questions.length, -1);
-      
+
       // Update UI
       if (mounted) {
         setState(() {});
@@ -54,7 +54,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       // Fallback to default questions on any error
       _generateQuestions();
       _userAnswers = List.filled(_questions.length, -1);
-      
+
       if (mounted) {
         setState(() {});
       }
@@ -151,7 +151,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
   ) {
     int a = 1, b = 1;
     final safeRandom = random == 0 ? 1 : random;
-    
+
     switch (difficulty) {
       case GameDifficulty.easy:
         a = (safeRandom % 9) + 1;
@@ -178,13 +178,13 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       (correct - (safeRandom % 5) - 1).toString(),
       (correct + (safeRandom % 10) + 5).toString(),
     ];
-    
+
     // Remove duplicates and ensure we have exactly 4 unique options
     final uniqueOptions = options.toSet().toList();
     while (uniqueOptions.length < 4) {
       uniqueOptions.add((correct + uniqueOptions.length + 10).toString());
     }
-    
+
     uniqueOptions.shuffle();
     final correctIndex = uniqueOptions.indexOf(correct.toString());
 
@@ -253,7 +253,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
   ) {
     int a = 1, b = 1;
     final safeRandom = random == 0 ? 1 : random;
-    
+
     switch (difficulty) {
       case GameDifficulty.easy:
         a = (safeRandom % 10) + 1;
@@ -280,13 +280,13 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       (correct - (safeRandom % 10) - 1).toString(),
       (correct + (safeRandom % 20) + 10).toString(),
     ];
-    
+
     // Remove duplicates and ensure we have exactly 4 unique options
     final uniqueOptions = options.toSet().toList();
     while (uniqueOptions.length < 4) {
       uniqueOptions.add((correct + uniqueOptions.length + 15).toString());
     }
-    
+
     uniqueOptions.shuffle();
     final correctIndex = uniqueOptions.indexOf(correct.toString());
 
@@ -304,7 +304,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
   ) {
     int result = 1, divisor = 2;
     final safeRandom = random == 0 ? 1 : random;
-    
+
     switch (difficulty) {
       case GameDifficulty.easy:
         result = (safeRandom % 10) + 1;
@@ -331,13 +331,13 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
       (result - (safeRandom % 5) - 1).toString(),
       (result + (safeRandom % 10) + 5).toString(),
     ];
-    
+
     // Remove duplicates and ensure we have exactly 4 unique options
     final uniqueOptions = options.toSet().toList();
     while (uniqueOptions.length < 4) {
       uniqueOptions.add((result + uniqueOptions.length + 8).toString());
     }
-    
+
     uniqueOptions.shuffle();
     final correctIndex = uniqueOptions.indexOf(result.toString());
 

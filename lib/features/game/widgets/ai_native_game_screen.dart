@@ -67,21 +67,25 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
     try {
       final prefsService = ref.read(userPreferencesServiceProvider);
       final preferences = await prefsService.getGamePreferences();
-      
+
       // Auto-configure based on user preferences
       setState(() {
-        _selectedDifficulty = _mapGameDifficultyToAI(preferences.preferredDifficulty);
+        _selectedDifficulty = _mapGameDifficultyToAI(
+          preferences.preferredDifficulty,
+        );
         _selectedTopic = preferences.preferredCategory;
         _selectedQuestionCount = preferences.preferredQuestionCount;
         _timeRemaining = preferences.preferredTimeLimit;
-        
+
         // Skip selection screens if preferences are set
-        if (_selectedDifficulty != null && _selectedTopic != null && _selectedQuestionCount != null) {
+        if (_selectedDifficulty != null &&
+            _selectedTopic != null &&
+            _selectedQuestionCount != null) {
           _showDifficultySelection = false;
           _showTopicSelection = false;
           _showQuestionCountSelection = false;
           _showTimeLimitSelection = false;
-          
+
           // Auto-start the game
           _startGame();
         }
