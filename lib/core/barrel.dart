@@ -35,6 +35,9 @@ export 'report_export/barrel.dart';
 export 'firebase/firebase_service.dart';
 export 'firebase/firestore_service.dart';
 
+// Routing System
+export 'routing/barrel.dart';
+
 // AI Services
 export 'ai/ai_service.dart';
 export 'ai/adaptive_learning_engine.dart';

@@ -17,7 +17,7 @@ import '../../../core/ai/chatgpt_config.dart';
 
 /// Game Selection Screen
 /// Allows users to choose between different game modes
-enum GameMode { classic, aiNative, chatgpt }
+enum GameSelectionMode { classic, aiNative, chatgpt }
 
 class GameSelectionScreen extends ConsumerStatefulWidget {
   const GameSelectionScreen({super.key});
@@ -28,7 +28,7 @@ class GameSelectionScreen extends ConsumerStatefulWidget {
 }
 
 class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
-  GameMode? _selectedGame;
+  GameSelectionMode? _selectedGame;
 
   @override
   Widget build(BuildContext context) {
@@ -40,13 +40,13 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
     if (_selectedGame != null) {
       late final Widget selectedChild;
       switch (_selectedGame!) {
-        case GameMode.classic:
+        case GameSelectionMode.classic:
           selectedChild = const ClassicQuizScreen();
           break;
-        case GameMode.aiNative:
+        case GameSelectionMode.aiNative:
           selectedChild = const AINativeGameScreen();
           break;
-        case GameMode.chatgpt:
+        case GameSelectionMode.chatgpt:
           selectedChild = const ChatGPTEnhancedGameScreen();
           break;
       }
@@ -146,7 +146,9 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                     'Traditional math quiz with basic questions',
                     Icons.quiz,
                     Colors.blue,
-                    () => setState(() => _selectedGame = GameMode.classic),
+                    () => setState(
+                      () => _selectedGame = GameSelectionMode.classic,
+                    ),
                     themeData,
                     colorScheme,
                   ),
@@ -156,7 +158,9 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                     'Advanced AI-powered questions with local generation',
                     Icons.psychology,
                     Colors.green,
-                    () => setState(() => _selectedGame = GameMode.aiNative),
+                    () => setState(
+                      () => _selectedGame = GameSelectionMode.aiNative,
+                    ),
                     themeData,
                     colorScheme,
                   ),
@@ -169,7 +173,9 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                     () {
                       if (chatGPTStatus['hasApiKey'] == true &&
                           chatGPTStatus['isEnabled'] == true) {
-                        setState(() => _selectedGame = GameMode.chatgpt);
+                        setState(
+                          () => _selectedGame = GameSelectionMode.chatgpt,
+                        );
                       } else {
                         _showChatGPTSetupDialog(
                           context,

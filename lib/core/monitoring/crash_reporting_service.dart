@@ -8,16 +8,23 @@ import 'dart:async';
 class FirebaseCrashlytics {
   static FirebaseCrashlytics instance = FirebaseCrashlytics._();
   FirebaseCrashlytics._();
-  
+
   Future<void> setCrashlyticsCollectionEnabled(bool enabled) async {}
   Future<void> setUserIdentifier(String identifier) async {}
   Future<void> setCustomKey(String key, dynamic value) async {}
-  Future<void> recordError(dynamic exception, StackTrace? stack, {bool? fatal, Iterable<String>? information}) async {}
+  Future<void> recordError(
+    dynamic exception,
+    StackTrace? stack, {
+    bool? fatal,
+    Iterable<String>? information,
+  }) async {}
   void recordFlutterFatalError(FlutterErrorDetails details) {}
 }
 
 class SentryFlutter {
-  static Future<void> init(Function(SentryOptions) optionsConfiguration) async {}
+  static Future<void> init(
+    Function(SentryOptions) optionsConfiguration,
+  ) async {}
 }
 
 class SentryOptions {
@@ -33,16 +40,20 @@ class SentryOptions {
 }
 
 class Sentry {
-  static Future<void> captureException(dynamic exception, {StackTrace? stackTrace, Function(Scope)? withScope}) async {}
+  static Future<void> captureException(
+    dynamic exception, {
+    StackTrace? stackTrace,
+    Function(Scope)? withScope,
+  }) async {}
   static void configureScope(Function(Scope) scopeCallback) {}
   static void addBreadcrumb(Breadcrumb breadcrumb) {}
 }
 
 class SentryEvent {
   final SentryUser? user;
-  
+
   SentryEvent({this.user});
-  
+
   SentryEvent copyWith({SentryUser? user}) {
     return SentryEvent(user: user ?? this.user);
   }
@@ -52,9 +63,9 @@ class SentryUser {
   final String? id;
   final String? email;
   final String? ipAddress;
-  
+
   SentryUser({this.id, this.email, this.ipAddress});
-  
+
   SentryUser copyWith({String? id, String? email, String? ipAddress}) {
     return SentryUser(
       id: id ?? this.id,
@@ -74,8 +85,13 @@ class Breadcrumb {
   final String category;
   final SentryLevel level;
   final Map<String, dynamic>? data;
-  
-  Breadcrumb({required this.message, required this.category, required this.level, this.data});
+
+  Breadcrumb({
+    required this.message,
+    required this.category,
+    required this.level,
+    this.data,
+  });
 }
 
 enum SentryLevel { debug, info, warning, error, fatal }

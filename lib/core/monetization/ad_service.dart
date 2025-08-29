@@ -9,7 +9,7 @@ import 'monetization_models.dart';
 class MobileAds {
   static MobileAds instance = MobileAds._();
   MobileAds._();
-  
+
   Future<void> initialize() async {}
   Future<void> updateRequestConfiguration(RequestConfiguration config) async {}
 }
@@ -19,7 +19,7 @@ class RequestConfiguration {
   final TagForChildDirectedTreatment tagForChildDirectedTreatment;
   final TagForUnderAgeOfConsent tagForUnderAgeOfConsent;
   final MaxAdContentRating maxAdContentRating;
-  
+
   RequestConfiguration({
     required this.testDeviceIds,
     required this.tagForChildDirectedTreatment,
@@ -29,7 +29,9 @@ class RequestConfiguration {
 }
 
 enum TagForChildDirectedTreatment { yes, no, unspecified }
+
 enum TagForUnderAgeOfConsent { yes, no, unspecified }
+
 enum MaxAdContentRating { g, pg, t, ma }
 
 class AdSize {
@@ -48,9 +50,14 @@ class BannerAd {
   final AdSize size;
   final AdRequest request;
   final BannerAdListener listener;
-  
-  BannerAd({required this.adUnitId, required this.size, required this.request, required this.listener});
-  
+
+  BannerAd({
+    required this.adUnitId,
+    required this.size,
+    required this.request,
+    required this.listener,
+  });
+
   Future<void> load() async {}
   void dispose() {}
 }
@@ -61,7 +68,7 @@ class InterstitialAd {
     required AdRequest request,
     required InterstitialAdLoadCallback adLoadCallback,
   }) async {}
-  
+
   Future<void> show() async {}
   void dispose() {}
   FullScreenContentCallback? fullScreenContentCallback;
@@ -73,8 +80,10 @@ class RewardedAd {
     required AdRequest request,
     required RewardedAdLoadCallback rewardedAdLoadCallback,
   }) async {}
-  
-  Future<void> show({required Function(dynamic, RewardItem) onUserEarnedReward}) async {}
+
+  Future<void> show({
+    required Function(dynamic, RewardItem) onUserEarnedReward,
+  }) async {}
   void dispose() {}
   FullScreenContentCallback? fullScreenContentCallback;
 }
@@ -88,21 +97,26 @@ class BannerAdListener {
   final Function(dynamic, LoadAdError)? onAdFailedToLoad;
   final Function(dynamic)? onAdOpened;
   final Function(dynamic)? onAdClicked;
-  
-  BannerAdListener({this.onAdLoaded, this.onAdFailedToLoad, this.onAdOpened, this.onAdClicked});
+
+  BannerAdListener({
+    this.onAdLoaded,
+    this.onAdFailedToLoad,
+    this.onAdOpened,
+    this.onAdClicked,
+  });
 }
 
 class InterstitialAdLoadCallback {
   final Function(InterstitialAd)? onAdLoaded;
   final Function(LoadAdError)? onAdFailedToLoad;
-  
+
   InterstitialAdLoadCallback({this.onAdLoaded, this.onAdFailedToLoad});
 }
 
 class RewardedAdLoadCallback {
   final Function(RewardedAd)? onAdLoaded;
   final Function(LoadAdError)? onAdFailedToLoad;
-  
+
   RewardedAdLoadCallback({this.onAdLoaded, this.onAdFailedToLoad});
 }
 
@@ -111,7 +125,7 @@ class FullScreenContentCallback {
   final Function(dynamic)? onAdDismissedFullScreenContent;
   final Function(dynamic, dynamic)? onAdFailedToShowFullScreenContent;
   final Function(dynamic)? onAdClicked;
-  
+
   FullScreenContentCallback({
     this.onAdShowedFullScreenContent,
     this.onAdDismissedFullScreenContent,
@@ -123,14 +137,14 @@ class FullScreenContentCallback {
 class LoadAdError {
   final int code;
   final String message;
-  
+
   LoadAdError({required this.code, required this.message});
 }
 
 class RewardItem {
   final int amount;
   final String type;
-  
+
   RewardItem({required this.amount, required this.type});
 }
 
