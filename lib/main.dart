@@ -49,7 +49,7 @@ void main() async {
       print('Initializing SharedPreferences...');
     }
     // Initialize SharedPreferences
-    await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     if (kDebugMode) {
       print('SharedPreferences initialized successfully');
     }
@@ -72,6 +72,9 @@ void main() async {
 
     runApp(
       ProviderScope(
+        overrides: [
+          themeServiceProvider.overrideWithValue(ThemeService(prefs)),
+        ],
         child: const MathGeniusApp(),
       ),
     );
