@@ -43,7 +43,41 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   @override
   void initState() {
     super.initState();
-    // Don't auto-initialize, show difficulty selection first
+    _loadUserPreferences();
+  }
+
+  Future<void> _loadUserPreferences() async {
+    try {
+      final prefsService = ref.read(userPreferencesServiceProvider);
+      final preferences = await prefsService.getGamePreferences();
+      
+      // Auto-configure based on user preferences
+      setState(() {
+        _selectedDifficulty = preferences.preferredDifficulty;
+        _selectedTopic = preferences.preferredCategory;
+        _selectedQuestionCount = preferences.preferredQuestionCount;
+        _selectedTimeLimit = preferences.preferredTimeLimit;
+        _timeRemaining = preferences.preferredTimeLimit;
+        
+        // Skip selection screens if preferences are set
+        if (_selectedDifficulty != null && _selectedTopic != null && _selectedQuestionCount != null) {
+          _showDifficultySelection = false;
+          _showTopicSelection = false;
+          _showQuestionCountSelection = false;
+          _showTimeLimitSelection = false;
+          
+          // Auto-start the game
+          _initializeGame();
+        } else {
+          _isLoading = false;
+        }
+      });
+    } catch (e) {
+      // Continue with manual selection if preferences loading fails
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override

@@ -31,6 +31,36 @@ class GameSelectionScreen extends ConsumerStatefulWidget {
 
 class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
   GameSelectionMode? _selectedGame;
+  UserGamePreferences? _currentPreferences;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentPreferences();
+  }
+
+  Future<void> _loadCurrentPreferences() async {
+    try {
+      final prefsService = ref.read(userPreferencesServiceProvider);
+      final preferences = await prefsService.getGamePreferences();
+      setState(() {
+        _currentPreferences = preferences;
+      });
+    } catch (e) {
+      // Continue without preferences
+    }
+  }
+
+  String _getPreferencesSummary() {
+    if (_currentPreferences == null) return '';
+    
+    final difficulty = _currentPreferences!.preferredDifficulty.name.toUpperCase();
+    final category = _currentPreferences!.preferredCategory.name;
+    final questions = _currentPreferences!.preferredQuestionCount;
+    final time = _currentPreferences!.preferredTimeLimit;
+    
+    return '$difficulty • $category • $questions questions • ${time}s per question';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +189,9 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Start playing instantly with smart defaults',
+                                  _currentPreferences != null
+                                      ? 'Using your saved preferences: ${_getPreferencesSummary()}'
+                                      : 'Start playing instantly with smart defaults',
                                   style: TextStyle(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
