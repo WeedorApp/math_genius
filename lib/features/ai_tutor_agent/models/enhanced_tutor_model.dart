@@ -1,6 +1,5 @@
-// Enhanced tutor models - standalone implementation
-
 /// Enhanced AI tutor models with advanced conversation and learning features
+library;
 
 /// Learning styles for personalized tutoring
 enum LearningStyle {

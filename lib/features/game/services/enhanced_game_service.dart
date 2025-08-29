@@ -13,9 +13,7 @@ import '../models/enhanced_game_model.dart';
 /// Provides progression, achievements, power-ups, and adaptive difficulty
 class EnhancedGameService {
   static const String _gameStatsKey = 'enhanced_game_stats';
-  static const String _achievementsKey = 'user_achievements';
-  static const String _powerUpsKey = 'user_powerups';
-  static const String _progressionKey = 'game_progression';
+  // Future: _achievementsKey, _powerUpsKey, _progressionKey for advanced features
 
   final SharedPreferences _prefs;
   final Box? _hiveBox;
