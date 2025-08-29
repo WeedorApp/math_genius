@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'tutor_model.dart';
+// Enhanced tutor models - standalone implementation
 
 /// Enhanced AI tutor models with advanced conversation and learning features
 

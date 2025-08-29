@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:math';
 
 // Models
-import '../models/tutor_model.dart';
 import '../models/enhanced_tutor_model.dart';
 
 /// Enhanced AI tutor service with advanced conversation and learning features
