@@ -90,7 +90,28 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Game Preferences'),
+        automaticallyImplyLeading: false, // Disable default back button
+        title: Row(
+          children: [
+            // Simple flat back icon
+            GestureDetector(
+              onTap: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else {
+                  context.go('/settings');
+                }
+              },
+              child: Icon(
+                Icons.chevron_left,
+                color: Theme.of(context).colorScheme.onSurface,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            const Text('Game Preferences'),
+          ],
+        ),
         actions: [
           if (_isSaving)
             const Padding(

@@ -1037,19 +1037,14 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
         top: false,
         child: Row(
           children: [
-            // Previous button
+            // Simple previous button
             if (_currentQuestionIndex > 0)
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _previousQuestion,
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Previous'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+              GestureDetector(
+                onTap: _previousQuestion,
+                child: Icon(
+                  Icons.chevron_left,
+                  color: colorScheme.onSurface,
+                  size: 28,
                 ),
               ),
 
@@ -1146,15 +1141,13 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
           // Action buttons with quick actions
           Row(
             children: [
-              Expanded(
-                child: GameQuickActions.buildActionButton(
-                  context: context,
-                  ref: ref,
-                  title: 'Back to Games',
-                  icon: Icons.arrow_back,
-                  color: colorScheme.primary,
-                  onPressed: () => context.go('/game-selection'),
-                  isPrimary: false,
+              // Simple flat back icon
+              GestureDetector(
+                onTap: () => context.go('/game-selection'),
+                child: Icon(
+                  Icons.chevron_left,
+                  color: colorScheme.onSurface,
+                  size: 28,
                 ),
               ),
               const SizedBox(width: 16),

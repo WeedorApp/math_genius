@@ -94,16 +94,12 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                 padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
                 child: Align(
                   alignment: Alignment.topLeft,
-                  child: AdaptiveUISystem.adaptiveButton(
-                    context: context,
-                    onPressed: () => setState(() => _selectedGame = null),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.arrow_back),
-                        SizedBox(width: context.adaptiveLayout.cardSpacing / 2),
-                        const Text('Back'),
-                      ],
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedGame = null),
+                    child: Icon(
+                      Icons.chevron_left,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      size: 28,
                     ),
                   ),
                 ),
