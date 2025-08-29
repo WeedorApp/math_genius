@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 // Core imports
 import '../../../core/barrel.dart';
@@ -13,7 +14,8 @@ class GamePreferencesScreen extends ConsumerStatefulWidget {
   const GamePreferencesScreen({super.key});
 
   @override
-  ConsumerState<GamePreferencesScreen> createState() => _GamePreferencesScreenState();
+  ConsumerState<GamePreferencesScreen> createState() =>
+      _GamePreferencesScreenState();
 }
 
 class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
@@ -45,13 +47,13 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
 
   Future<void> _savePreferences() async {
     if (_preferences == null || _isSaving) return;
-    
+
     setState(() => _isSaving = true);
-    
+
     try {
       final service = ref.read(userPreferencesServiceProvider);
       await service.saveGamePreferences(_preferences!);
-      
+
       if (mounted) {
         AdaptiveUISystem.showAdaptiveSnackBar(
           context: context,
@@ -91,27 +93,29 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false, // Disable default back button
-        title: Row(
-          children: [
-            // Simple flat back icon
-            GestureDetector(
-              onTap: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                } else {
-                  context.go('/settings');
-                }
-              },
+        leading: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () {
+              // Check if we can go back, otherwise go to settings
+              if (context.canPop()) {
+                GoRouter.of(context).pop();
+              } else {
+                context.go('/settings');
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
               child: Icon(
                 Icons.chevron_left,
                 color: Theme.of(context).colorScheme.onSurface,
-                size: 28,
+                size: 24, // Consistent sizing
               ),
             ),
-            const SizedBox(width: 16),
-            const Text('Game Preferences'),
-          ],
+          ),
         ),
+        title: const Text('Game Preferences'),
         actions: [
           if (_isSaving)
             const Padding(
@@ -123,10 +127,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
               ),
             )
           else
-            TextButton(
-              onPressed: _savePreferences,
-              child: const Text('Save'),
-            ),
+            TextButton(onPressed: _savePreferences, child: const Text('Save')),
         ],
       ),
       body: ListView(
@@ -139,9 +140,9 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
             Icons.trending_up,
             _buildDifficultySelector(),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Topic Selection & Mixing
           _buildPreferenceCard(
             'Math Topics',
@@ -149,9 +150,9 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
             Icons.category,
             _buildTopicMixingSelector(),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Time Settings
           _buildPreferenceCard(
             'Time Settings',
@@ -159,9 +160,9 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
             Icons.timer,
             _buildTimeSettings(),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Question Settings
           _buildPreferenceCard(
             'Question Settings',
@@ -169,9 +170,9 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
             Icons.quiz,
             _buildQuestionSettings(),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Audio & Feedback
           _buildPreferenceCard(
             'Audio & Feedback',
@@ -179,16 +180,18 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
             Icons.volume_up,
             _buildAudioSettings(),
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // Reset to Defaults
           ElevatedButton.icon(
             onPressed: _resetToDefaults,
             icon: const Icon(Icons.restore),
             label: const Text('Reset to Defaults'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
             ),
           ),
         ],
@@ -205,9 +208,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
@@ -230,11 +231,13 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      icon, 
+                      icon,
                       color: Theme.of(context).primaryColor,
                       size: 24,
                     ),
@@ -246,18 +249,22 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
                       children: [
                         Text(
                           title,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           subtitle,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            height: 1.4,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                                height: 1.4,
+                              ),
                         ),
                       ],
                     ),
@@ -280,7 +287,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
       children: GameDifficulty.values.map((difficulty) {
         final isSelected = _preferences!.preferredDifficulty == difficulty;
         final color = _getDifficultyColor(difficulty);
-        
+
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           child: FilterChip(
@@ -309,7 +316,9 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
             onSelected: (selected) {
               if (selected) {
                 setState(() {
-                  _preferences = _preferences!.copyWith(preferredDifficulty: difficulty);
+                  _preferences = _preferences!.copyWith(
+                    preferredDifficulty: difficulty,
+                  );
                 });
               }
             },
@@ -365,12 +374,12 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
         // Quick Mix Presets
         Text(
           'Quick Mix Options',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        
+
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -405,65 +414,50 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 20),
-        
+
         const Divider(),
-        
+
         const SizedBox(height: 16),
-        
+
         Text(
           'Or Choose Individual Topics',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Basic Math Operations
-        _buildCategoryGroup(
-          'Basic Operations',
-          Icons.calculate,
-          Colors.blue,
-          [
-            GameCategory.addition,
-            GameCategory.subtraction,
-            GameCategory.multiplication,
-            GameCategory.division,
-          ],
-        ),
-        
+        _buildCategoryGroup('Basic Operations', Icons.calculate, Colors.blue, [
+          GameCategory.addition,
+          GameCategory.subtraction,
+          GameCategory.multiplication,
+          GameCategory.division,
+        ]),
+
         const SizedBox(height: 12),
-        
+
         // Advanced Math
-        _buildCategoryGroup(
-          'Advanced Math',
-          Icons.functions,
-          Colors.green,
-          [
-            GameCategory.algebra,
-            GameCategory.geometry,
-            GameCategory.calculus,
-          ],
-        ),
-        
+        _buildCategoryGroup('Advanced Math', Icons.functions, Colors.green, [
+          GameCategory.algebra,
+          GameCategory.geometry,
+          GameCategory.calculus,
+        ]),
+
         const SizedBox(height: 12),
-        
+
         // Numbers & Decimals
-        _buildCategoryGroup(
-          'Numbers & Decimals',
-          Icons.pin,
-          Colors.orange,
-          [
-            GameCategory.fractions,
-            GameCategory.decimals,
-            GameCategory.percentages,
-          ],
-        ),
-        
+        _buildCategoryGroup('Numbers & Decimals', Icons.pin, Colors.orange, [
+          GameCategory.fractions,
+          GameCategory.decimals,
+          GameCategory.percentages,
+        ]),
+
         const SizedBox(height: 12),
-        
+
         // Applied Math
         _buildCategoryGroup(
           'Applied Math',
@@ -514,7 +508,9 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
               onSelected: (selected) {
                 if (selected) {
                   setState(() {
-                    _preferences = _preferences!.copyWith(preferredCategory: category);
+                    _preferences = _preferences!.copyWith(
+                      preferredCategory: category,
+                    );
                   });
                 }
               },
@@ -605,7 +601,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
       {'time': 90, 'label': 'Long', 'desc': 'Complex problems'},
       {'time': 120, 'label': 'Marathon', 'desc': 'No rush'},
     ];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -639,7 +635,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
             final label = timeData['label'] as String;
             final desc = timeData['desc'] as String;
             final isSelected = _preferences!.preferredTimeLimit == time;
-            
+
             return AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               child: FilterChip(
@@ -671,7 +667,9 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
                 onSelected: (selected) {
                   if (selected) {
                     setState(() {
-                      _preferences = _preferences!.copyWith(preferredTimeLimit: time);
+                      _preferences = _preferences!.copyWith(
+                        preferredTimeLimit: time,
+                      );
                     });
                   }
                 },
@@ -685,15 +683,15 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
 
   Widget _buildQuestionSettings() {
     final questionCounts = [5, 10, 15, 20, 25, 30];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Questions per game: ${_preferences!.preferredQuestionCount}',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -706,7 +704,9 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
               onSelected: (selected) {
                 if (selected) {
                   setState(() {
-                    _preferences = _preferences!.copyWith(preferredQuestionCount: count);
+                    _preferences = _preferences!.copyWith(
+                      preferredQuestionCount: count,
+                    );
                   });
                 }
               },
@@ -736,13 +736,17 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
           value: _preferences!.hapticFeedbackEnabled,
           onChanged: (value) {
             setState(() {
-              _preferences = _preferences!.copyWith(hapticFeedbackEnabled: value);
+              _preferences = _preferences!.copyWith(
+                hapticFeedbackEnabled: value,
+              );
             });
           },
         ),
         SwitchListTile(
           title: const Text('Auto-Start Next Game'),
-          subtitle: const Text('Automatically start a new game after completion'),
+          subtitle: const Text(
+            'Automatically start a new game after completion',
+          ),
           value: _preferences!.autoStartNextGame,
           onChanged: (value) {
             setState(() {
@@ -759,7 +763,9 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Reset to Defaults'),
-        content: const Text('This will reset all game preferences to default values. Continue?'),
+        content: const Text(
+          'This will reset all game preferences to default values. Continue?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -801,30 +807,50 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
   // Mix preset selection methods
   void _selectBasicOperations() {
     setState(() {
-      _preferences = _preferences!.copyWith(preferredCategory: GameCategory.addition);
+      _preferences = _preferences!.copyWith(
+        preferredCategory: GameCategory.addition,
+      );
     });
-    _showMixInfo('Basic Math Mix', 'Games will include Addition, Subtraction, Multiplication, and Division');
+    _showMixInfo(
+      'Basic Math Mix',
+      'Games will include Addition, Subtraction, Multiplication, and Division',
+    );
   }
 
   void _selectNumbersFocus() {
     setState(() {
-      _preferences = _preferences!.copyWith(preferredCategory: GameCategory.fractions);
+      _preferences = _preferences!.copyWith(
+        preferredCategory: GameCategory.fractions,
+      );
     });
-    _showMixInfo('Numbers Focus Mix', 'Games will include Fractions, Decimals, and Percentages');
+    _showMixInfo(
+      'Numbers Focus Mix',
+      'Games will include Fractions, Decimals, and Percentages',
+    );
   }
 
   void _selectAdvancedMix() {
     setState(() {
-      _preferences = _preferences!.copyWith(preferredCategory: GameCategory.algebra);
+      _preferences = _preferences!.copyWith(
+        preferredCategory: GameCategory.algebra,
+      );
     });
-    _showMixInfo('Advanced Math Mix', 'Games will include Algebra, Geometry, and Word Problems');
+    _showMixInfo(
+      'Advanced Math Mix',
+      'Games will include Algebra, Geometry, and Word Problems',
+    );
   }
 
   void _selectEverything() {
     setState(() {
-      _preferences = _preferences!.copyWith(preferredCategory: GameCategory.wordProblems);
+      _preferences = _preferences!.copyWith(
+        preferredCategory: GameCategory.wordProblems,
+      );
     });
-    _showMixInfo('Everything Mix', 'Games will randomly include all available math topics');
+    _showMixInfo(
+      'Everything Mix',
+      'Games will randomly include all available math topics',
+    );
   }
 
   void _showMixInfo(String title, String description) {

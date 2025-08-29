@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/barrel.dart';
 import '../../../core/theme/design_system.dart';
 import '../models/game_model.dart';
 import 'game_design_cards.dart';
+import 'game_selection_screen.dart';
 
 /// Classic Quiz Game Screen
 /// Traditional math quiz with multiple choice questions
@@ -410,15 +410,6 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     }
   }
 
-  void _previousQuestion() {
-    if (_currentQuestionIndex > 0) {
-      setState(() {
-        _currentQuestionIndex--;
-      });
-      _resetTimer();
-    }
-  }
-
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -527,12 +518,12 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     final userAnswer = _userAnswers[_currentQuestionIndex];
 
     return PopScope(
-      canPop: true,
+      canPop: false, // Disable system back button to avoid conflicts
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          // If pop was prevented, navigate to game selection
-          context.go('/game-selection');
-        }
+        // Let our custom back button handle all navigation
+        debugPrint(
+          'System back intercepted - using custom back button instead',
+        );
       },
       child: Scaffold(
         backgroundColor: colorScheme.surface,
@@ -540,7 +531,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
           child: Column(
             children: [
               // Professional Header
-              _buildProfessionalHeader(colorScheme),
+              _buildProfessionalHeader(context, colorScheme),
 
               // Main Content Area - Scrollable
               Expanded(
@@ -585,178 +576,6 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
     );
   }
 
-  Widget _buildProfessionalHeader(ColorScheme colorScheme) {
-    return Padding(
-      padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
-      child: Column(
-        children: [
-          // Top row with back button and score/timer
-          Row(
-            children: [
-              // Simple flat back icon
-              GestureDetector(
-                onTap: () {
-                  // Safe navigation - check if we can pop, otherwise go to game selection
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  } else {
-                    // Use GoRouter to navigate to game selection
-                    context.go('/game-selection');
-                  }
-                },
-                child: Icon(
-                  Icons.chevron_left,
-                  color: colorScheme.onSurface,
-                  size: 28,
-                ),
-              ),
-
-              // Spacer to push score/timer to the right
-              Expanded(child: Container()),
-
-              // Score and Timer display
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Timer display
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _timeRemaining <= 10
-                          ? Colors.red.withValues(alpha: 0.1)
-                          : colorScheme.tertiaryContainer,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _timeRemaining <= 10
-                            ? Colors.red
-                            : colorScheme.tertiary,
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.timer,
-                          color: _timeRemaining <= 10
-                              ? Colors.red
-                              : colorScheme.onTertiaryContainer,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${_timeRemaining}s',
-                          style: TextStyle(
-                            color: _timeRemaining <= 10
-                                ? Colors.red
-                                : colorScheme.onTertiaryContainer,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 8),
-
-                  // Score display
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.stars,
-                          color: colorScheme.onPrimaryContainer,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$_score pts',
-                          style: TextStyle(
-                            color: colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          SizedBox(height: context.adaptiveLayout.cardSpacing),
-
-          // Progress section
-          Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    '${((_currentQuestionIndex + 1) / _questions.length * 100).round()}%',
-                    style: TextStyle(
-                      color: colorScheme.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 8),
-
-              // Progress bar
-              Container(
-                height: 6,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: (_currentQuestionIndex + 1) / _questions.length,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          colorScheme.primary,
-                          colorScheme.primaryContainer,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildModernQuestionCard(
     Map<String, dynamic> currentQuestion,
     ColorScheme colorScheme,
@@ -790,16 +609,19 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
               children: [
                 Icon(
                   Icons.quiz,
-                  size: 16,
+                  size: 14,
                   color: colorScheme.onSecondaryContainer,
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Multiple Choice',
-                  style: TextStyle(
-                    color: colorScheme.onSecondaryContainer,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    'Multiple Choice',
+                    style: TextStyle(
+                      color: colorScheme.onSecondaryContainer,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -1037,20 +859,6 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
         top: false,
         child: Row(
           children: [
-            // Simple previous button
-            if (_currentQuestionIndex > 0)
-              GestureDetector(
-                onTap: _previousQuestion,
-                child: Icon(
-                  Icons.chevron_left,
-                  color: colorScheme.onSurface,
-                  size: 28,
-                ),
-              ),
-
-            if (_currentQuestionIndex > 0)
-              SizedBox(width: context.adaptiveLayout.cardSpacing),
-
             // Next/Finish button
             Expanded(
               flex: _currentQuestionIndex > 0 ? 1 : 2,
@@ -1141,16 +949,6 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
           // Action buttons with quick actions
           Row(
             children: [
-              // Simple flat back icon
-              GestureDetector(
-                onTap: () => context.go('/game-selection'),
-                child: Icon(
-                  Icons.chevron_left,
-                  color: colorScheme.onSurface,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: GameQuickActions.buildActionButton(
                   context: context,
@@ -1160,6 +958,255 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen> {
                   color: colorScheme.primary,
                   onPressed: _restartQuiz,
                   isPrimary: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds a professional header section with back button, progress, timer, and score
+  Widget _buildProfessionalHeader(
+    BuildContext context,
+    ColorScheme colorScheme,
+  ) {
+    final progress = (_currentQuestionIndex + 1) / _questions.length;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Top row: Back button, Title, Menu
+          Row(
+            children: [
+              // Professional back button
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    debugPrint('Back button tapped - direct navigation');
+                    // Direct navigation using MaterialPageRoute
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => const GameSelectionScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.chevron_left,
+                      color: colorScheme.onSurface,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 16),
+
+              // Title and difficulty
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Classic Quiz',
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.quiz_outlined,
+                          color: colorScheme.primary,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Stats row
+              Row(
+                children: [
+                  // Timer
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _timeRemaining <= 10
+                          ? Colors.red.withValues(alpha: 0.1)
+                          : colorScheme.tertiaryContainer,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _timeRemaining <= 10
+                            ? Colors.red.withValues(alpha: 0.6)
+                            : colorScheme.tertiary.withValues(alpha: 0.6),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _timeRemaining <= 10
+                              ? Icons.timer
+                              : Icons.access_time,
+                          color: _timeRemaining <= 10
+                              ? Colors.red
+                              : colorScheme.onTertiaryContainer,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_timeRemaining}s',
+                          style: TextStyle(
+                            color: _timeRemaining <= 10
+                                ? Colors.red
+                                : colorScheme.onTertiaryContainer,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Score
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primaryContainer,
+                          colorScheme.primaryContainer.withValues(alpha: 0.8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.stars_rounded,
+                          color: colorScheme.primary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$_score',
+                          style: TextStyle(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Progress bar with percentage
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Progress',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '${(progress * 100).round()}%',
+                          style: TextStyle(
+                            color: colorScheme.primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
