@@ -199,37 +199,39 @@ class _StudentGamesScreenState extends ConsumerState<StudentGamesScreen> {
       isClickable: true,
       child: Padding(
         padding: DesignSystem.padding20,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 32, color: color),
               ),
-              child: Icon(icon, size: 32, color: color),
-            ),
-            DesignSystem.gap16,
-            Text(
-              title,
-              style: themeData.typography.titleMedium.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
+              DesignSystem.gap16,
+              Text(
+                title,
+                style: themeData.typography.titleMedium.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            DesignSystem.gap8,
-            Text(
-              description,
-              style: themeData.typography.bodySmall.copyWith(
-                color: colorScheme.onSurfaceVariant,
+              DesignSystem.gap8,
+              Text(
+                description,
+                style: themeData.typography.bodySmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

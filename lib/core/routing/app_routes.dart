@@ -16,6 +16,7 @@ class AppRoutes {
 
   /// Game routes
   static const String gameSelection = '/game-selection';
+  static const String gameModes = '/game-modes';
   static const String classicQuiz = '/classic-quiz';
   static const String aiNativeQuiz = '/ai-native-quiz';
   static const String chatgptQuiz = '/chatgpt-quiz';
@@ -87,6 +88,7 @@ class AppRoutes {
   static void goToHome(BuildContext context) => context.go(home);
   static void goToGameSelection(BuildContext context) =>
       context.go(gameSelection);
+  static void goToGameModes(BuildContext context) => context.go(gameModes);
   static void goToAITutor(BuildContext context) => context.go(aiTutor);
   static void goToStudentDashboard(BuildContext context) =>
       context.go(studentDashboard);

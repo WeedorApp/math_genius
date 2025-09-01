@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -19,9 +20,24 @@ import '../../features/family_system/barrel.dart' as family;
 
 /// Enhanced router provider with comprehensive routing
 final appRouterProvider = Provider<GoRouter>((ref) {
+  // Get SharedPreferences from the main app initialization
+  // This will be overridden in main.dart with the actual instance
+
   return GoRouter(
     initialLocation: AppRoutes.welcome,
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: kDebugMode,
+
+    // Simple authentication redirect (disabled for now)
+    // redirect: (context, state) async {
+    //   // Check authentication for protected routes
+    //   if (!_isPublicRoute(state.uri.path)) {
+    //     final isAuthenticated = await NavigationEnhancements.isUserAuthenticated(prefs);
+    //     if (!isAuthenticated) {
+    //       return AppRoutes.auth;
+    //     }
+    //   }
+    //   return null;
+    // },
     routes: [
       // Authentication & Onboarding Routes
       GoRoute(
@@ -62,6 +78,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'home',
         pageBuilder: (context, state) =>
             _buildPage(state, const home.ResponsiveHomeScreen()),
+      ),
+
+      // Game Mode Selector (Direct Access)
+      GoRoute(
+        path: AppRoutes.gameModes,
+        name: 'game-modes',
+        pageBuilder: (context, state) =>
+            _buildPage(state, const game.GameSelectionScreen()),
       ),
 
       // Game Routes with Enhanced Navigation
@@ -282,11 +306,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // Global error handling
     errorPageBuilder: (context, state) =>
         _buildPage(state, ErrorScreen(error: state.error.toString())),
-    // Route redirection logic
-    redirect: (context, state) {
-      // TODO: Implement authentication-based redirects
-      return null; // No redirect needed
-    },
   );
 });
 

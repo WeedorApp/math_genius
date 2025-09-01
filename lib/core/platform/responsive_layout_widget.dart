@@ -44,11 +44,18 @@ class _ResponsiveLayoutState extends ConsumerState<ResponsiveLayout> {
     _updateScreenType();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateScreenType();
+  }
+
   void _updateScreenType() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final width = MediaQuery.of(context).size.width;
       final layoutService = ref.read(responsiveLayoutServiceProvider);
       final screenType = layoutService.getScreenType(width);
+
       ref.read(screenTypeProvider.notifier).state = screenType;
     });
   }

@@ -7,6 +7,9 @@ export 'context/barrel.dart';
 // Platform Service
 export 'platform/barrel.dart';
 
+// Native Features Service
+export 'native/barrel.dart' hide NotificationType;
+
 // Theme Service
 export 'theme/barrel.dart';
 
@@ -40,6 +43,10 @@ export 'routing/barrel.dart';
 
 // User Preferences
 export 'preferences/barrel.dart';
+export 'preferences/global_preferences_listener.dart';
+
+// Accessibility
+export 'accessibility/barrel.dart';
 
 // AI Services
 export 'ai/ai_service.dart';

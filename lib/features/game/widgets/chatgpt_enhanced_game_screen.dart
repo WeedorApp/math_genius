@@ -9,6 +9,7 @@ import '../../../core/barrel.dart';
 // Models
 import '../models/game_model.dart';
 import '../models/ai_difficulty_model.dart';
+import '../mixins/game_preferences_mixin.dart';
 
 // Services
 import '../services/ai_native_game_service.dart';
@@ -27,7 +28,9 @@ class ChatGPTEnhancedGameScreen extends ConsumerStatefulWidget {
 
 class _ChatGPTEnhancedGameScreenState
     extends ConsumerState<ChatGPTEnhancedGameScreen>
-    with TickerProviderStateMixin {
+    with
+        TickerProviderStateMixin,
+        GamePreferencesMixin<ChatGPTEnhancedGameScreen> {
   // State variables
   bool _isLoading = false;
   String? _errorMessage;
@@ -64,7 +67,151 @@ class _ChatGPTEnhancedGameScreenState
   void initState() {
     super.initState();
     _initializeAnimations();
+    initializePreferencesSync(); // Initialize preferences synchronization
     _loadUserPreferences();
+  }
+
+  // GamePreferencesMixin implementation
+  @override
+  GameDifficulty? get selectedDifficulty => _selectedDifficulty != null
+      ? _mapAIDifficultyToGame(_selectedDifficulty!)
+      : null;
+
+  @override
+  GameCategory? get selectedCategory => _selectedTopic;
+
+  @override
+  int? get selectedQuestionCount => _selectedQuestionCount;
+
+  @override
+  int get selectedTimeLimit => _selectedTimeLimit;
+
+  @override
+  bool get soundEnabled => true; // ChatGPT games always have sound
+
+  @override
+  bool get hapticFeedbackEnabled => true; // ChatGPT games always have haptic
+
+  @override
+  String get gameMode => 'chatgpt';
+
+  @override
+  void onDifficultyChanged(GameDifficulty difficulty) {
+    if (mounted) {
+      setState(() {
+        _selectedDifficulty = _mapGameDifficultyToAI(difficulty);
+      });
+      _regenerateQuestionsIfNeeded();
+    }
+  }
+
+  @override
+  void onCategoryChanged(GameCategory category) {
+    if (mounted) {
+      setState(() {
+        _selectedTopic = category;
+      });
+      _regenerateQuestionsIfNeeded();
+    }
+  }
+
+  @override
+  void onQuestionCountChanged(int count) {
+    if (mounted) {
+      setState(() {
+        _selectedQuestionCount = count;
+      });
+      _regenerateQuestionsIfNeeded();
+    }
+  }
+
+  @override
+  void onTimeLimitChanged(int timeLimit) {
+    if (mounted) {
+      setState(() {
+        _selectedTimeLimit = timeLimit;
+        _timeRemaining = timeLimit;
+      });
+      _restartTimer();
+    }
+  }
+
+  @override
+  void onSoundEnabledChanged(bool enabled) {
+    // ChatGPT games always have sound - no action needed
+  }
+
+  @override
+  void onHapticFeedbackChanged(bool enabled) {
+    // ChatGPT games always have haptic - no action needed
+  }
+
+  @override
+  void onPreferencesLoaded(UserGamePreferences preferences) {
+    if (mounted) {
+      setState(() {
+        _selectedDifficulty = _mapGameDifficultyToAI(
+          preferences.preferredDifficulty,
+        );
+        _selectedTopic = preferences.preferredCategory;
+        _selectedQuestionCount = preferences.preferredQuestionCount;
+        _timeRemaining = preferences.preferredTimeLimit;
+        _selectedTimeLimit = preferences.preferredTimeLimit;
+      });
+
+      // Auto-start if all preferences are set
+      if (_selectedDifficulty != null &&
+          _selectedTopic != null &&
+          _selectedQuestionCount != null) {
+        _showDifficultySelection = false;
+        _showTopicSelection = false;
+        _showQuestionCountSelection = false;
+        _showTimeLimitSelection = false;
+        _initializeChatGPTGame();
+      }
+    }
+  }
+
+  /// Regenerate questions when preferences change during gameplay
+  void _regenerateQuestionsIfNeeded() {
+    if (!_showResults && _questions != null && _questions!.isNotEmpty) {
+      _initializeChatGPTGame(); // Restart with new preferences
+    }
+  }
+
+  /// Restart timer with current time limit
+  void _restartTimer() {
+    _timer?.cancel();
+    _timeRemaining = _selectedTimeLimit;
+    _startTimer();
+  }
+
+  /// Map GameDifficulty to AIDifficulty
+  AIDifficulty _mapGameDifficultyToAI(GameDifficulty difficulty) {
+    switch (difficulty) {
+      case GameDifficulty.easy:
+        return AIDifficulty.beginner;
+      case GameDifficulty.normal:
+        return AIDifficulty.intermediate;
+      case GameDifficulty.genius:
+        return AIDifficulty.advanced;
+      case GameDifficulty.quantum:
+        return AIDifficulty.expert;
+    }
+  }
+
+  /// Map AIDifficulty to GameDifficulty
+  GameDifficulty _mapAIDifficultyToGame(AIDifficulty difficulty) {
+    switch (difficulty) {
+      case AIDifficulty.beginner:
+        return GameDifficulty.easy;
+      case AIDifficulty.intermediate:
+        return GameDifficulty.normal;
+      case AIDifficulty.advanced:
+        return GameDifficulty.genius;
+      case AIDifficulty.expert:
+        return GameDifficulty.quantum;
+    }
   }
 
   Future<void> _loadUserPreferences() async {
@@ -99,19 +246,6 @@ class _ChatGPTEnhancedGameScreenState
       if (kDebugMode) {
         print('Failed to load user preferences: $e');
       }
-    }
-  }
-
-  AIDifficulty _mapGameDifficultyToAI(GameDifficulty gameDifficulty) {
-    switch (gameDifficulty) {
-      case GameDifficulty.easy:
-        return AIDifficulty.beginner;
-      case GameDifficulty.normal:
-        return AIDifficulty.intermediate;
-      case GameDifficulty.genius:
-        return AIDifficulty.advanced;
-      case GameDifficulty.quantum:
-        return AIDifficulty.expert;
     }
   }
 
@@ -424,6 +558,16 @@ class _ChatGPTEnhancedGameScreenState
         'aiConfidence': aiAnalysis['confidence'] ?? 0.8,
       };
     });
+
+    // Update preferences from completed game
+    if (_selectedDifficulty != null &&
+        _selectedTopic != null &&
+        _selectedQuestionCount != null) {
+      updatePreferencesFromGameCompletion(
+        score: _score,
+        totalQuestions: _questions?.length ?? 0,
+      );
+    }
   }
 
   String _generateAIInsights() {

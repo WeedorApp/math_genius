@@ -31,36 +31,11 @@ class GameSelectionScreen extends ConsumerStatefulWidget {
 
 class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
   GameSelectionMode? _selectedGame;
-  UserGamePreferences? _currentPreferences;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentPreferences();
-  }
-
-  Future<void> _loadCurrentPreferences() async {
-    try {
-      final prefsService = ref.read(userPreferencesServiceProvider);
-      final preferences = await prefsService.getGamePreferences();
-      setState(() {
-        _currentPreferences = preferences;
-      });
-    } catch (e) {
-      // Continue without preferences
-    }
-  }
-
-  String _getPreferencesSummary() {
-    if (_currentPreferences == null) return '';
-
-    final difficulty = _currentPreferences!.preferredDifficulty.name
-        .toUpperCase();
-    final category = _currentPreferences!.preferredCategory.name;
-    final questions = _currentPreferences!.preferredQuestionCount;
-    final time = _currentPreferences!.preferredTimeLimit;
-
-    return '$difficulty • $category • $questions questions • ${time}s per question';
   }
 
   @override
@@ -100,237 +75,192 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Choose Game Mode',
-          style: themeData.typography.headlineSmall.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
-        actions: [
-          IconButton(
-            onPressed: () => context.push('/settings/games'),
-            icon: const Icon(Icons.tune),
-            tooltip: 'Game Settings',
-          ),
-          IconButton(
-            onPressed: () => context.push('/settings'),
-            icon: const Icon(Icons.settings),
-            tooltip: 'All Settings',
-          ),
-        ],
+    final navigationItems = [
+      const NavigationItem(title: 'Home', icon: Icons.home, route: '/home'),
+      const NavigationItem(
+        title: 'Games',
+        icon: Icons.games,
+        route: '/game-selection',
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header with Quick Start
-              Text(
-                'Ready to Play Math? 🎯',
-                style: themeData.typography.headlineMedium.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: context.adaptiveLayout.cardSpacing / 2),
-              Text(
-                'Jump right in or choose your adventure',
-                style: themeData.typography.bodyMedium.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
+      const NavigationItem(
+        title: 'AI Tutor',
+        icon: Icons.smart_toy,
+        route: '/ai-tutor',
+      ),
+      const NavigationItem(
+        title: 'Family',
+        icon: Icons.family_restroom,
+        route: '/family',
+      ),
+      const NavigationItem(
+        title: 'Live',
+        icon: Icons.video_call,
+        route: '/live-session',
+      ),
+      const NavigationItem(
+        title: 'Rewards',
+        icon: Icons.star,
+        route: '/rewards',
+      ),
+    ];
 
-              SizedBox(height: context.adaptiveLayout.cardSpacing),
+    return ResponsiveLayout(
+      currentRoute: '/game-selection',
+      navigationItems: navigationItems,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Choose Game Mode',
+            style: themeData.typography.headlineSmall.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: colorScheme.surface,
+          foregroundColor: colorScheme.onSurface,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: colorScheme.onSurface,
+            ),
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                context.go('/home');
+              }
+            },
+            tooltip: 'Back to previous screen',
+          ),
+          actions: [
+            IconButton(
+              onPressed: () => context.push('/settings/games'),
+              icon: const Icon(Icons.tune),
+              tooltip: 'Game Settings',
+            ),
+            IconButton(
+              onPressed: () => context.push('/settings'),
+              icon: const Icon(Icons.settings),
+              tooltip: 'All Settings',
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                Text(
+                  'Ready to Play Math? 🎯',
+                  style: themeData.typography.headlineMedium.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Choose your preferred game mode to start learning!',
+                  style: themeData.typography.bodyMedium.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
 
-              // Quick Start Button
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.rocket_launch,
-                            color: Colors.green,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Quick Start',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  _currentPreferences != null
-                                      ? 'Using your saved preferences: ${_getPreferencesSummary()}'
-                                      : 'Start playing instantly with smart defaults',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                const SizedBox(height: 24),
+
+                // Game Options
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.9,
+                  children: [
+                    _buildGameOption(
+                      context,
+                      'Classic Quiz',
+                      'Traditional math quiz with basic questions',
+                      Icons.quiz,
+                      Colors.blue,
+                      () => setState(
+                        () => _selectedGame = GameSelectionMode.classic,
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () => setState(
-                                () => _selectedGame = GameSelectionMode.classic,
-                              ),
-                              icon: const Icon(Icons.play_arrow),
-                              label: const Text('Start Classic'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () => setState(
-                                () =>
-                                    _selectedGame = GameSelectionMode.aiNative,
-                              ),
-                              icon: const Icon(Icons.psychology),
-                              label: const Text('AI Game'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      themeData,
+                      colorScheme,
+                    ),
+                    _buildGameOption(
+                      context,
+                      'AI-Native Quiz',
+                      'Advanced AI-powered questions with local generation',
+                      Icons.psychology,
+                      Colors.green,
+                      () => setState(
+                        () => _selectedGame = GameSelectionMode.aiNative,
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: context.adaptiveLayout.sectionSpacing),
-
-              const Divider(),
-
-              SizedBox(height: context.adaptiveLayout.cardSpacing),
-
-              Text(
-                'More Game Options',
-                style: themeData.typography.titleMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              SizedBox(height: context.adaptiveLayout.cardSpacing),
-
-              // Game Options
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: context.adaptiveLayout.cardSpacing,
-                mainAxisSpacing: context.adaptiveLayout.cardSpacing,
-                childAspectRatio: 0.9, // Increased from 0.85
-                children: [
-                  _buildGameOption(
-                    context,
-                    'Classic Quiz',
-                    'Traditional math quiz with basic questions',
-                    Icons.quiz,
-                    Colors.blue,
-                    () => setState(
-                      () => _selectedGame = GameSelectionMode.classic,
+                      themeData,
+                      colorScheme,
                     ),
-                    themeData,
-                    colorScheme,
-                  ),
-                  _buildGameOption(
-                    context,
-                    'AI-Native Quiz',
-                    'Advanced AI-powered questions with local generation',
-                    Icons.psychology,
-                    Colors.green,
-                    () => setState(
-                      () => _selectedGame = GameSelectionMode.aiNative,
+                    _buildGameOption(
+                      context,
+                      'ChatGPT Enhanced',
+                      'Real AI-powered questions with ChatGPT',
+                      Icons.auto_awesome,
+                      Colors.purple,
+                      () {
+                        if (chatGPTStatus['hasApiKey'] == true &&
+                            chatGPTStatus['isEnabled'] == true) {
+                          setState(
+                            () => _selectedGame = GameSelectionMode.chatgpt,
+                          );
+                        } else {
+                          _showChatGPTSetupDialog(
+                            context,
+                            ref,
+                            themeData,
+                            colorScheme,
+                          );
+                        }
+                      },
+                      themeData,
+                      colorScheme,
+                      isEnabled:
+                          chatGPTStatus['hasApiKey'] == true &&
+                          chatGPTStatus['isEnabled'] == true,
                     ),
-                    themeData,
-                    colorScheme,
-                  ),
-                  _buildGameOption(
+                    _buildGameOption(
+                      context,
+                      'Settings',
+                      'Configure ChatGPT and other settings',
+                      Icons.settings,
+                      Colors.orange,
+                      () => context.push('/settings/chatgpt'),
+                      themeData,
+                      colorScheme,
+                    ),
+                  ],
+                ),
+
+                // ChatGPT Status
+                if (chatGPTStatus['hasApiKey'] == true) ...[
+                  const SizedBox(height: 20),
+                  _buildChatGPTStatusCard(
                     context,
-                    'ChatGPT Enhanced',
-                    'Real AI-powered questions with ChatGPT',
-                    Icons.auto_awesome,
-                    Colors.purple,
-                    () {
-                      if (chatGPTStatus['hasApiKey'] == true &&
-                          chatGPTStatus['isEnabled'] == true) {
-                        setState(
-                          () => _selectedGame = GameSelectionMode.chatgpt,
-                        );
-                      } else {
-                        _showChatGPTSetupDialog(
-                          context,
-                          ref,
-                          themeData,
-                          colorScheme,
-                        );
-                      }
-                    },
                     themeData,
                     colorScheme,
-                    isEnabled:
-                        chatGPTStatus['hasApiKey'] == true &&
-                        chatGPTStatus['isEnabled'] == true,
-                  ),
-                  _buildGameOption(
-                    context,
-                    'Settings',
-                    'Configure ChatGPT and other settings',
-                    Icons.settings,
-                    Colors.orange,
-                    () => context.push('/settings/chatgpt'),
-                    themeData,
-                    colorScheme,
+                    chatGPTStatus,
                   ),
                 ],
-              ),
 
-              // ChatGPT Status
-              if (chatGPTStatus['hasApiKey'] == true) ...[
-                const SizedBox(height: 20), // Reduced from 24
-                _buildChatGPTStatusCard(
-                  context,
-                  themeData,
-                  colorScheme,
-                  chatGPTStatus,
-                ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 24),
+                  Text(_errorMessage!, style: TextStyle(color: Colors.red)),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -355,7 +285,7 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
           color: isEnabled
               ? colorScheme.surface
               : colorScheme.surface.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(12), // Reduced from 16
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isEnabled
                 ? colorScheme.outline.withValues(alpha: 0.2)
@@ -364,37 +294,34 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
           boxShadow: [
             BoxShadow(
               color: colorScheme.shadow.withValues(alpha: 0.1),
-              blurRadius: 6, // Reduced from 8
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: EdgeInsets.all(
-                  context.adaptiveLayout.contentPadding / 2,
-                ),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: isEnabled
                       ? color.withValues(alpha: 0.1)
                       : color.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(8), // Reduced from 12
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   icon,
-                  size: 24, // Reduced from 32
+                  size: 24,
                   color: isEnabled ? color : color.withValues(alpha: 0.5),
                 ),
               ),
-              SizedBox(height: context.adaptiveLayout.cardSpacing / 2),
+              const SizedBox(height: 8),
               Text(
                 title,
                 style: themeData.typography.titleMedium.copyWith(
-                  // Changed from titleLarge
                   color: isEnabled
                       ? colorScheme.onSurface
                       : colorScheme.onSurface.withValues(alpha: 0.5),
@@ -404,7 +331,7 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(height: context.adaptiveLayout.cardSpacing / 4),
+              const SizedBox(height: 4),
               Text(
                 subtitle,
                 style: themeData.typography.bodySmall.copyWith(
@@ -417,15 +344,15 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
               if (!isEnabled) ...[
-                SizedBox(height: context.adaptiveLayout.cardSpacing / 3),
+                const SizedBox(height: 4),
                 Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: context.adaptiveLayout.cardSpacing / 2.5,
-                    vertical: context.adaptiveLayout.cardSpacing / 6,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6), // Reduced from 8
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     'Setup Required',
@@ -453,7 +380,7 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
     final model = status['model'] as String;
 
     return Container(
-      padding: EdgeInsets.all(context.adaptiveLayout.contentPadding),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
@@ -465,7 +392,7 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
           Row(
             children: [
               Icon(Icons.psychology, color: colorScheme.primary, size: 20),
-              SizedBox(width: context.adaptiveLayout.cardSpacing / 2),
+              const SizedBox(width: 8),
               Text(
                 'ChatGPT Status',
                 style: themeData.typography.titleSmall.copyWith(
@@ -475,7 +402,7 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
               ),
             ],
           ),
-          SizedBox(height: context.adaptiveLayout.cardSpacing / 2),
+          const SizedBox(height: 8),
           Row(
             children: [
               Container(
@@ -486,7 +413,7 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
                   shape: BoxShape.circle,
                 ),
               ),
-              SizedBox(width: context.adaptiveLayout.cardSpacing / 2),
+              const SizedBox(width: 8),
               Text(
                 isEnabled ? 'Enabled' : 'Disabled',
                 style: themeData.typography.bodySmall.copyWith(

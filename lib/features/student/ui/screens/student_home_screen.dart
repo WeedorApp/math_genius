@@ -6,7 +6,10 @@ import '../../../../core/barrel.dart';
 
 // Student UI components
 import '../components/student_header.dart';
-import '../components/student_dashboard.dart';
+import '../components/advanced_student_dashboard.dart';
+
+// User management imports
+import '../../../user_management/services/user_management_service.dart';
 
 /// Student Home Screen
 /// Main screen for student users with responsive layout
@@ -30,7 +33,7 @@ class StudentHomeScreen extends ConsumerWidget {
       const NavigationItem(
         title: 'Games',
         icon: Icons.games,
-        route: '/student/games',
+        route: '/game-modes',
       ),
       const NavigationItem(
         title: 'AI Tutor',
@@ -71,18 +74,37 @@ class StudentHomeScreen extends ConsumerWidget {
     ResponsiveLayoutService layoutService,
     bool isSidebarCollapsed,
   ) {
+    // Get the current authenticated user
+    final userManagementService = ref.watch(userManagementServiceProvider);
+
+    return FutureBuilder(
+      future: userManagementService.getCurrentUser(),
+      builder: (context, snapshot) {
+        final currentUser = snapshot.data;
+        final studentId = currentUser?.id ?? 'guest-user';
+
+        return _buildLayoutForScreenType(screenType, colorScheme, studentId);
+      },
+    );
+  }
+
+  Widget _buildLayoutForScreenType(
+    ScreenType screenType,
+    ColorScheme colorScheme,
+    String studentId,
+  ) {
     switch (screenType) {
       case ScreenType.desktop:
       case ScreenType.largeDesktop:
-        return _buildDesktopLayout(colorScheme);
+        return _buildDesktopLayout(colorScheme, studentId);
       case ScreenType.tablet:
-        return _buildTabletLayout(colorScheme);
+        return _buildTabletLayout(colorScheme, studentId);
       case ScreenType.mobile:
-        return _buildMobileLayout(colorScheme);
+        return _buildMobileLayout(colorScheme, studentId);
     }
   }
 
-  Widget _buildDesktopLayout(ColorScheme colorScheme) {
+  Widget _buildDesktopLayout(ColorScheme colorScheme, String studentId) {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Column(
@@ -90,13 +112,13 @@ class StudentHomeScreen extends ConsumerWidget {
           // Header
           const StudentHeader(),
           // Dashboard Content
-          Expanded(child: const StudentDashboard()),
+          Expanded(child: AdvancedStudentDashboard(studentId: studentId)),
         ],
       ),
     );
   }
 
-  Widget _buildTabletLayout(ColorScheme colorScheme) {
+  Widget _buildTabletLayout(ColorScheme colorScheme, String studentId) {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Column(
@@ -104,13 +126,13 @@ class StudentHomeScreen extends ConsumerWidget {
           // Header
           const StudentHeader(),
           // Dashboard Content
-          Expanded(child: const StudentDashboard()),
+          Expanded(child: AdvancedStudentDashboard(studentId: studentId)),
         ],
       ),
     );
   }
 
-  Widget _buildMobileLayout(ColorScheme colorScheme) {
+  Widget _buildMobileLayout(ColorScheme colorScheme, String studentId) {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Column(
@@ -118,7 +140,7 @@ class StudentHomeScreen extends ConsumerWidget {
           // Header
           const StudentHeader(),
           // Dashboard Content
-          Expanded(child: const StudentDashboard()),
+          Expanded(child: AdvancedStudentDashboard(studentId: studentId)),
         ],
       ),
     );

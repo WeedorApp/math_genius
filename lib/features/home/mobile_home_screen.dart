@@ -333,10 +333,16 @@ class _MobileHomeScreenState extends ConsumerState<MobileHomeScreen>
   ) {
     final actions = [
       _ActionItem(
-        title: 'Practice',
-        icon: Icons.fitness_center,
-        color: Colors.blue,
-        onTap: () => context.go('/practice'),
+        title: 'Dashboard',
+        icon: Icons.dashboard,
+        color: Colors.indigo,
+        onTap: () => context.go('/student'),
+      ),
+      _ActionItem(
+        title: 'Games',
+        icon: Icons.games,
+        color: Colors.green,
+        onTap: () => context.go('/game-selection'),
       ),
       _ActionItem(
         title: 'AI Tutor',
@@ -345,16 +351,10 @@ class _MobileHomeScreenState extends ConsumerState<MobileHomeScreen>
         onTap: () => context.go('/ai-tutor'),
       ),
       _ActionItem(
-        title: 'Games',
-        icon: Icons.games,
-        color: Colors.green,
-        onTap: () => context.go('/games'),
-      ),
-      _ActionItem(
-        title: 'Challenges',
-        icon: Icons.emoji_events,
+        title: 'Settings',
+        icon: Icons.settings,
         color: Colors.orange,
-        onTap: () => context.go('/challenges'),
+        onTap: () => context.go('/settings'),
       ),
     ];
 

@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Import GradeLevel from game models
+import '../../game/models/game_model.dart';
+
 /// User roles
 enum UserRole { student, parent, teacher, admin, guest }
 
@@ -31,6 +34,7 @@ class User {
   final String? familyId;
   final List<String> permissions;
   final Map<String, dynamic> profile;
+  final GradeLevel? gradeLevel;
 
   const User({
     required this.id,
@@ -50,6 +54,7 @@ class User {
     this.familyId,
     this.permissions = const [],
     this.profile = const {},
+    this.gradeLevel,
   });
 
   User copyWith({
@@ -70,6 +75,7 @@ class User {
     String? familyId,
     List<String>? permissions,
     Map<String, dynamic>? profile,
+    GradeLevel? gradeLevel,
   }) {
     return User(
       id: id ?? this.id,
@@ -89,6 +95,7 @@ class User {
       familyId: familyId ?? this.familyId,
       permissions: permissions ?? this.permissions,
       profile: profile ?? this.profile,
+      gradeLevel: gradeLevel ?? this.gradeLevel,
     );
   }
 
@@ -111,6 +118,7 @@ class User {
       'familyId': familyId,
       'permissions': permissions,
       'profile': profile,
+      'gradeLevel': gradeLevel?.name,
     };
   }
 
@@ -136,6 +144,7 @@ class User {
       'familyId': familyId,
       'permissions': permissions,
       'profile': profile,
+      'gradeLevel': gradeLevel?.name,
     };
   }
 
@@ -168,6 +177,12 @@ class User {
       familyId: data['familyId'] as String?,
       permissions: List<String>.from(data['permissions'] ?? []),
       profile: Map<String, dynamic>.from(data['profile'] ?? {}),
+      gradeLevel: data['gradeLevel'] != null
+          ? GradeLevel.values.firstWhere(
+              (e) => e.name == data['gradeLevel'],
+              orElse: () => GradeLevel.grade5,
+            )
+          : null,
     );
   }
 
@@ -200,6 +215,12 @@ class User {
       profile: json['profile'] != null
           ? Map<String, dynamic>.from(json['profile'] as Map)
           : {},
+      gradeLevel: json['gradeLevel'] != null
+          ? GradeLevel.values.firstWhere(
+              (e) => e.name == json['gradeLevel'],
+              orElse: () => GradeLevel.grade5,
+            )
+          : null,
     );
   }
 }

@@ -11,6 +11,9 @@ import '../../features/game/models/game_model.dart';
 // Configuration
 import 'chatgpt_config.dart';
 
+// Preferences
+import '../preferences/preferences_notifier.dart';
+
 /// Advanced ChatGPT Service for Math Genius
 /// Real AI model integration for intelligent question generation and analysis
 class ChatGPTService {
@@ -22,13 +25,14 @@ class ChatGPTService {
 
   ChatGPTService(this._apiKey, this._httpClient, this._config);
 
-  /// Generate AI-powered mathematical questions
+  /// Generate AI-powered mathematical questions with real-time preference integration
   Future<List<AIQuestion>> generateAIQuestions({
     required AIDifficulty difficultyLevel,
     required GameCategory category,
     required int count,
     String? userId,
     Map<String, dynamic>? userContext,
+    WidgetRef? ref, // For accessing real-time preferences
   }) async {
     try {
       // Check if ChatGPT is enabled and API key is available
@@ -37,6 +41,27 @@ class ChatGPTService {
           print('ChatGPT: Disabled or no API key available');
         }
         return [];
+      }
+
+      // Get real-time preferences for AI customization
+      Map<String, dynamic> enhancedContext = Map.from(userContext ?? {});
+      if (ref != null) {
+        final currentPrefs = ref.read(currentUserGamePreferencesProvider);
+        if (currentPrefs != null) {
+          enhancedContext.addAll({
+            'aiPersonality': currentPrefs.aiPersonality,
+            'aiStyle': currentPrefs.aiStyle,
+            'chatGPTModel': currentPrefs.chatGPTModel,
+            'tutoringStyle': currentPrefs.tutoringStyle,
+            'explanationDepth': currentPrefs.explanationDepth,
+            'questionComplexity': currentPrefs.questionComplexity,
+            'learningIntensity': currentPrefs.learningIntensity,
+          });
+          
+          if (kDebugMode) {
+            print('ChatGPT: Using real-time preferences - ${currentPrefs.aiPersonality} personality, ${currentPrefs.tutoringStyle} style');
+          }
+        }
       }
 
       if (kDebugMode) {
@@ -52,7 +77,7 @@ class ChatGPTService {
           difficultyLevel,
           category,
           userId,
-          userContext,
+          enhancedContext, // Use enhanced context with preferences
         );
         questions.add(question);
       }

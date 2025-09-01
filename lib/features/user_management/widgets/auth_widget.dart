@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
 // Core imports
@@ -8,6 +9,7 @@ import '../../../core/barrel.dart' hide UserRole;
 // User Management imports
 import '../barrel.dart';
 import '../models/user_model.dart' as user_models;
+import '../services/auth_error_handler.dart';
 
 /// Authentication Widget - Login and Registration
 class AuthWidget extends ConsumerStatefulWidget {
@@ -82,9 +84,25 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Login failed. Please try again.';
+
+        if (e is FirebaseAuthException) {
+          errorMessage = AuthErrorHandler.handleFirebaseAuthError(e);
+
+          // Handle specific recovery actions
+          final recovery = AuthErrorHandler.getRecoveryAction(e.code);
+          if (recovery == AuthRecoveryAction.resetPassword) {
+            _showPasswordResetDialog();
+          } else if (recovery == AuthRecoveryAction.switchToRegister) {
+            setState(() {
+              _isLogin = false; // Switch to registration mode
+            });
+          }
+        }
+
         AdaptiveUISystem.showAdaptiveSnackBar(
           context: context,
-          message: 'Login error: $e',
+          message: errorMessage,
           isError: true,
         );
       }
@@ -153,9 +171,24 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Registration failed. Please try again.';
+
+        if (e is FirebaseAuthException) {
+          errorMessage = AuthErrorHandler.handleFirebaseAuthError(e);
+
+          // Handle specific recovery actions
+          final recovery = AuthErrorHandler.getRecoveryAction(e.code);
+          if (recovery == AuthRecoveryAction.switchToLogin) {
+            setState(() {
+              _isLogin = true; // Switch to login mode
+            });
+            errorMessage += ' Switching to login mode.';
+          }
+        }
+
         AdaptiveUISystem.showAdaptiveSnackBar(
           context: context,
-          message: 'Registration error: $e',
+          message: errorMessage,
           isError: true,
         );
       }
@@ -530,6 +563,72 @@ class _AuthWidgetState extends ConsumerState<AuthWidget> {
         return Colors.orange;
       case AccountStatus.deleted:
         return Colors.black;
+    }
+  }
+
+  /// Show password reset dialog
+  Future<void> _showPasswordResetDialog() async {
+    final email = _emailController.text.trim();
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.lock_reset, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('Reset Password'),
+            ],
+          ),
+          content: Text(
+            email.isNotEmpty
+                ? 'Send password reset email to $email?'
+                : 'Please enter your email address first.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            if (email.isNotEmpty)
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await _sendPasswordReset(email);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Send Reset Email'),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Send password reset email
+  Future<void> _sendPasswordReset(String email) async {
+    try {
+      await ref.read(userManagementServiceProvider).resetPassword(email);
+
+      if (mounted) {
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message: 'Password reset email sent! Please check your inbox.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AdaptiveUISystem.showAdaptiveSnackBar(
+          context: context,
+          message:
+              'Error sending reset email: ${AuthErrorHandler.handleFirebaseAuthError(e)}',
+          isError: true,
+        );
+      }
     }
   }
 }

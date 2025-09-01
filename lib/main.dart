@@ -8,8 +8,20 @@ import 'firebase_options.dart';
 
 // Core modules
 import 'core/barrel.dart';
+
 import 'core/ai/chatgpt_config.dart';
 import 'features/ai_tutor_agent/services/ai_tutor_service.dart';
+import 'features/user_management/services/user_management_service.dart';
+import 'features/game/services/game_service.dart';
+import 'features/rewards/services/reward_service.dart';
+import 'features/live_session/services/live_session_service.dart';
+import 'features/user_management/services/class_management_service.dart'
+    as class_mgmt;
+import 'features/game/services/ai_native_game_service.dart' as ai_game;
+import 'features/student/services/student_analytics_service.dart';
+import 'core/ai/chatgpt_config.dart' as chatgpt;
+import 'core/ai/chatgpt_service.dart';
+import 'package:http/http.dart' as http;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,8 +94,44 @@ void main() async {
           userPreferencesServiceProvider.overrideWithValue(
             UserPreferencesService(prefs),
           ),
+          userManagementServiceProvider.overrideWithValue(
+            UserManagementService(prefs, hiveBox),
+          ),
+          // Add other services that need SharedPreferences
+          gameServiceProvider.overrideWithValue(GameService(prefs, hiveBox)),
+          rewardServiceProvider.overrideWithValue(
+            RewardService(prefs, hiveBox),
+          ),
+          liveSessionServiceProvider.overrideWithValue(
+            LiveSessionService(prefs, hiveBox),
+          ),
+          class_mgmt.classManagementServiceProvider.overrideWithValue(
+            class_mgmt.ClassManagementService(prefs),
+          ),
+          ai_game.aiNativeGameServiceProvider.overrideWithValue(
+            ai_game.AINativeGameService(
+              prefs,
+              ChatGPTService(
+                '', // API key will be loaded from config
+                http.Client(),
+                chatgpt.ChatGPTConfig(prefs),
+              ),
+            ),
+          ),
+          chatgpt.chatGPTConfigProvider.overrideWithValue(
+            chatgpt.ChatGPTConfig(prefs),
+          ),
+          studentAnalyticsServiceProvider.overrideWithValue(
+            StudentAnalyticsService(prefs, hiveBox),
+          ),
+          nativeFeaturesServiceProvider.overrideWithValue(
+            NativeFeaturesService(prefs),
+          ),
+          accessibilityServiceProvider.overrideWithValue(
+            AccessibilityService(),
+          ),
         ],
-        child: const MathGeniusApp(),
+        child: GlobalPreferencesListener(child: const MathGeniusApp()),
       ),
     );
   } catch (e) {
@@ -104,11 +152,93 @@ class MathGeniusApp extends ConsumerWidget {
     final themeData = ref.watch(themeDataProvider);
     final router = ref.watch(appRouterProvider);
 
-    return MaterialApp.router(
-      title: 'Math Genius',
-      theme: themeData.toThemeData(),
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
+    // Watch accessibility preferences for real-time updates
+    final preferences = ref.watch(currentUserGamePreferencesProvider);
+    final textScaler = ref.watch(textScalerProvider);
+
+    // Get accessibility-enhanced theme
+    ThemeData accessibleTheme = themeData.toThemeData();
+
+    if (preferences != null) {
+      // Apply high contrast mode
+      if (preferences.highContrastMode) {
+        final highContrastScheme =
+            AccessibilityService.getHighContrastColorScheme(
+              accessibleTheme.colorScheme,
+              true,
+            );
+        accessibleTheme = accessibleTheme.copyWith(
+          colorScheme: highContrastScheme,
+        );
+      }
+
+      // Apply dyslexia-friendly text theme
+      if (preferences.dyslexiaFriendlyMode) {
+        final dyslexiaTheme = AccessibilityService.getDyslexiaFriendlyTextTheme(
+          accessibleTheme.textTheme,
+          true,
+        );
+        accessibleTheme = accessibleTheme.copyWith(textTheme: dyslexiaTheme);
+      }
+
+      // Apply visual theme switching
+      accessibleTheme = _applyVisualTheme(
+        accessibleTheme,
+        preferences.visualTheme,
+      );
+    }
+
+    return MediaQuery(
+      // Apply font size scaling app-wide
+      data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+      child: MaterialApp.router(
+        title: 'Math Genius',
+        theme: accessibleTheme,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+        // Screen reader support
+        builder: (context, child) {
+          return AccessibilityWrapper(
+            preferences: preferences,
+            child: child ?? const SizedBox(),
+          );
+        },
+      ),
     );
+  }
+
+  /// Apply visual theme transformations app-wide
+  ThemeData _applyVisualTheme(ThemeData baseTheme, String visualTheme) {
+    switch (visualTheme) {
+      case 'dark':
+        return baseTheme.copyWith(
+          brightness: Brightness.dark,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: baseTheme.colorScheme.primary,
+            brightness: Brightness.dark,
+          ),
+        );
+
+      case 'colorful':
+        return baseTheme.copyWith(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.purple,
+            brightness: Brightness.light,
+          ),
+          primaryColor: Colors.purple,
+        );
+
+      case 'minimal':
+        return baseTheme.copyWith(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blueGrey,
+            brightness: Brightness.light,
+          ),
+          primaryColor: Colors.blueGrey,
+        );
+
+      default: // 'default'
+        return baseTheme;
+    }
   }
 }

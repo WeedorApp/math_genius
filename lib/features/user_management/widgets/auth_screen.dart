@@ -599,6 +599,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         if (kDebugMode) {
           print('Auth screen: Login successful, navigating to home...');
         }
+
+        // Navigate to home after successful login (will auto-redirect students)
+        if (mounted) {
+          if (kDebugMode) {
+            print('Auth screen: Executing navigation to /home');
+          }
+          context.go('/home');
+        }
       } else {
         // Register
         if (kDebugMode) {
@@ -634,6 +642,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               'Auth screen: Registration successful, user: ${user.displayName}',
             );
           }
+
+          // Navigate based on user role after successful registration
+          if (mounted) {
+            if (kDebugMode) {
+              print('Auth screen: Navigating based on user role...');
+            }
+            // Redirect based on user role
+            if (user.role == user_models.UserRole.student) {
+              context.go('/student');
+            } else {
+              context.go('/home');
+            }
+          }
         } catch (e) {
           if (kDebugMode) {
             print('Auth screen: Registration error: $e');
@@ -642,21 +663,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         }
         if (kDebugMode) {
           print('Auth screen: Registration successful, navigating to home...');
-        }
-      }
-
-      // Navigate to home
-      if (kDebugMode) {
-        print('Auth screen: About to navigate to /home');
-      }
-      if (mounted) {
-        if (kDebugMode) {
-          print('Auth screen: Navigating to /home');
-        }
-        context.go('/home');
-      } else {
-        if (kDebugMode) {
-          print('Auth screen: Widget not mounted, cannot navigate');
         }
       }
     } catch (e) {

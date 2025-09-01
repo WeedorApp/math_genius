@@ -779,7 +779,12 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
         // Test navigation with a simple approach
         try {
           if (!mounted) return;
-          context.go('/home');
+          // Redirect students to their dashboard
+          if (widget.userRole == user_models.UserRole.student) {
+            context.go('/student');
+          } else {
+            context.go('/home');
+          }
           if (kDebugMode) {
             print('ClassSelectionScreen: Navigation command sent successfully');
           }
@@ -790,7 +795,12 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
           // Try alternative navigation method
           try {
             if (!mounted) return;
-            context.go('/home');
+            // Redirect students to their dashboard
+            if (widget.userRole == user_models.UserRole.student) {
+              context.go('/student');
+            } else {
+              context.go('/home');
+            }
             if (kDebugMode) {
               print('ClassSelectionScreen: Alternative navigation successful');
             }

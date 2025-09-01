@@ -7,10 +7,12 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:async';
 import '../models/user_model.dart' as user_models;
+import '../models/auth_models.dart';
 import '../../../core/firebase/firebase_service.dart';
 import '../../../core/firebase/firestore_service.dart';
 import '../../../core/context/context_service.dart';
 import '../../../core/privacy/privacy_service.dart';
+import 'auth_error_handler.dart';
 
 /// Simplified User Management Service
 class UserManagementService {
@@ -63,10 +65,49 @@ class UserManagementService {
       }
 
       // Create Firebase user
-      final firebaseUser = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      firebase_auth.UserCredential firebaseUser;
+      try {
+        firebaseUser = await _auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } catch (e) {
+        if (e is firebase_auth.FirebaseAuthException &&
+            e.code == 'email-already-in-use') {
+          // User already exists - attempt to sign in instead
+          if (kDebugMode) {
+            print(
+              'UserManagementService: Email already exists, attempting login...',
+            );
+          }
+
+          try {
+            firebaseUser = await _auth.signInWithEmailAndPassword(
+              email: email,
+              password: password,
+            );
+
+            if (kDebugMode) {
+              print(
+                'UserManagementService: Existing user logged in successfully',
+              );
+            }
+          } catch (loginError) {
+            if (kDebugMode) {
+              print(
+                'UserManagementService: Login failed for existing user: $loginError',
+              );
+            }
+            throw firebase_auth.FirebaseAuthException(
+              code: 'existing-user-login-failed',
+              message:
+                  'This email is already registered. Please log in with your existing password, or reset your password if you forgot it.',
+            );
+          }
+        } else {
+          rethrow;
+        }
+      }
 
       if (kDebugMode) {
         print(
@@ -534,15 +575,76 @@ class UserManagementService {
         print('UserManagementService: Logging in user: $email');
       }
 
+      // Validate inputs first
+      if (email.isEmpty || password.isEmpty) {
+        throw firebase_auth.FirebaseAuthException(
+          code: 'invalid-credential',
+          message: 'Email and password cannot be empty',
+        );
+      }
+
+      // Check if offline mode is enabled
+      final isOfflineMode = await _isOfflineMode();
+      if (isOfflineMode) {
+        if (kDebugMode) {
+          print('UserManagementService: Using offline login mode');
+        }
+        return await _loginUserOffline(email: email, password: password);
+      }
+
       if (kDebugMode) {
         print('UserManagementService: Calling Firebase Auth...');
       }
 
-      // Sign in with Firebase
-      final userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      // Sign in with Firebase with enhanced error handling
+      firebase_auth.UserCredential userCredential;
+      try {
+        userCredential = await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          print('UserManagementService: Login error: $e');
+        }
+
+        // Handle specific Firebase Auth errors
+        if (e is firebase_auth.FirebaseAuthException) {
+          switch (e.code) {
+            case 'user-not-found':
+              throw firebase_auth.FirebaseAuthException(
+                code: 'user-not-found',
+                message:
+                    'No account found with this email. Please check your email or create a new account.',
+              );
+            case 'wrong-password':
+            case 'invalid-credential':
+              throw firebase_auth.FirebaseAuthException(
+                code: 'invalid-credential',
+                message:
+                    'Invalid email or password. Please check your credentials and try again.',
+              );
+            case 'too-many-requests':
+              throw firebase_auth.FirebaseAuthException(
+                code: 'too-many-requests',
+                message:
+                    'Too many failed login attempts. Please wait a few minutes before trying again.',
+              );
+            case 'user-disabled':
+              throw firebase_auth.FirebaseAuthException(
+                code: 'user-disabled',
+                message:
+                    'This account has been disabled. Please contact support for assistance.',
+              );
+            default:
+              throw firebase_auth.FirebaseAuthException(
+                code: e.code,
+                message: AuthErrorHandler.handleFirebaseAuthError(e),
+              );
+          }
+        }
+        rethrow;
+      }
 
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) {
@@ -635,21 +737,6 @@ class UserManagementService {
     } catch (e) {
       if (kDebugMode) {
         print('UserManagementService: Logout error: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Reset password
-  Future<void> resetPassword(String email) async {
-    try {
-      await _auth.sendPasswordResetEmail(email: email);
-      if (kDebugMode) {
-        print('UserManagementService: Password reset email sent to: $email');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('UserManagementService: Password reset error: $e');
       }
       rethrow;
     }
@@ -907,6 +994,155 @@ class UserManagementService {
       return false;
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Enhanced password reset with better error handling
+  Future<void> resetPassword(String email) async {
+    try {
+      if (kDebugMode) {
+        print('UserManagementService: Sending password reset email to: $email');
+      }
+
+      // Validate email format
+      if (email.isEmpty || !email.contains('@')) {
+        throw firebase_auth.FirebaseAuthException(
+          code: 'invalid-email',
+          message: 'Please enter a valid email address.',
+        );
+      }
+
+      await _auth.sendPasswordResetEmail(email: email);
+
+      if (kDebugMode) {
+        print('UserManagementService: Password reset email sent successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserManagementService: Password reset error: $e');
+      }
+
+      if (e is firebase_auth.FirebaseAuthException) {
+        switch (e.code) {
+          case 'user-not-found':
+            throw firebase_auth.FirebaseAuthException(
+              code: 'user-not-found',
+              message: 'No account found with this email address.',
+            );
+          case 'invalid-email':
+            throw firebase_auth.FirebaseAuthException(
+              code: 'invalid-email',
+              message: 'Please enter a valid email address.',
+            );
+          default:
+            throw firebase_auth.FirebaseAuthException(
+              code: e.code,
+              message: AuthErrorHandler.handleFirebaseAuthError(e),
+            );
+        }
+      }
+      rethrow;
+    }
+  }
+
+  /// Offline login support
+  Future<user_models.User?> _loginUserOffline({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('UserManagementService: Attempting offline login for: $email');
+      }
+
+      // Get stored offline users
+      final offlineUsersString = _prefs.getString('offline_users');
+      if (offlineUsersString == null) {
+        throw Exception(
+          'No offline users found. Please connect to the internet to log in.',
+        );
+      }
+
+      final offlineUsers =
+          jsonDecode(offlineUsersString) as Map<String, dynamic>;
+      final userData = offlineUsers[email];
+
+      if (userData == null) {
+        throw Exception('User not found in offline storage.');
+      }
+
+      final storedPassword = userData['password'] as String;
+      if (storedPassword != password) {
+        throw Exception('Invalid password for offline login.');
+      }
+
+      final user = user_models.User.fromJson(
+        userData['user'] as Map<String, dynamic>,
+      );
+
+      // Save current user session
+      await _saveUser(user);
+      await _saveSession({
+        'userId': user.id,
+        'loginTime': DateTime.now().toIso8601String(),
+        'deviceId': await _getDeviceId(),
+        'isOffline': true,
+      });
+
+      if (kDebugMode) {
+        print('UserManagementService: Offline login successful');
+      }
+
+      return user;
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserManagementService: Offline login error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Check if user already exists and suggest appropriate action
+  /// Note: fetchSignInMethodsForEmail is deprecated for security reasons
+  /// Modern approach uses registration attempt with error handling
+  Future<AuthSuggestion> checkUserExistence(String email) async {
+    // Return default suggestion since fetchSignInMethodsForEmail is deprecated
+    return AuthSuggestion(
+      exists: false,
+      suggestedAction: 'register',
+      message: 'Please create an account or try logging in.',
+      signInMethods: ['password'],
+    );
+  }
+
+  /// Logout user and clear all data
+  Future<void> logout() async {
+    try {
+      if (kDebugMode) {
+        print('UserManagementService: Logging out user...');
+      }
+
+      // Sign out from Firebase
+      await _auth.signOut();
+
+      // Clear local storage
+      await _prefs.remove(_currentUserKey);
+      await _prefs.remove(_currentSessionKey);
+
+      // Clear Hive storage
+      if (_hiveBox != null) {
+        await _hiveBox.delete(_currentUserKey);
+        await _hiveBox.delete(_currentSessionKey);
+      }
+
+      if (kDebugMode) {
+        print('UserManagementService: Logout completed successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserManagementService: Logout error: $e');
+      }
+      rethrow;
     }
   }
 }

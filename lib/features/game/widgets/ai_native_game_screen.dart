@@ -9,6 +9,7 @@ import '../../../core/barrel.dart';
 // Models
 import '../models/game_model.dart';
 import '../models/ai_difficulty_model.dart';
+import '../mixins/game_preferences_mixin.dart';
 
 // Services
 import '../services/ai_native_game_service.dart';
@@ -23,7 +24,7 @@ class AINativeGameScreen extends ConsumerStatefulWidget {
 }
 
 class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, GamePreferencesMixin<AINativeGameScreen> {
   // State variables
   bool _isLoading = false;
   String? _errorMessage;
@@ -60,7 +61,151 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   void initState() {
     super.initState();
     _initializeAnimations();
+    initializePreferencesSync(); // Initialize preferences synchronization
     _loadUserPreferences();
+  }
+
+  // GamePreferencesMixin implementation
+  @override
+  GameDifficulty? get selectedDifficulty => _selectedDifficulty != null
+      ? _mapAIDifficultyToGame(_selectedDifficulty!)
+      : null;
+
+  @override
+  GameCategory? get selectedCategory => _selectedTopic;
+
+  @override
+  int? get selectedQuestionCount => _selectedQuestionCount;
+
+  @override
+  int get selectedTimeLimit => _selectedTimeLimit;
+
+  @override
+  bool get soundEnabled => true; // AI Native games always have sound
+
+  @override
+  bool get hapticFeedbackEnabled => true; // AI Native games always have haptic
+
+  @override
+  String get gameMode => 'ai_native';
+
+  @override
+  void onDifficultyChanged(GameDifficulty difficulty) {
+    if (mounted) {
+      setState(() {
+        _selectedDifficulty = _mapGameDifficultyToAI(difficulty);
+      });
+      _regenerateQuestionsIfNeeded();
+    }
+  }
+
+  @override
+  void onCategoryChanged(GameCategory category) {
+    if (mounted) {
+      setState(() {
+        _selectedTopic = category;
+      });
+      _regenerateQuestionsIfNeeded();
+    }
+  }
+
+  @override
+  void onQuestionCountChanged(int count) {
+    if (mounted) {
+      setState(() {
+        _selectedQuestionCount = count;
+      });
+      _regenerateQuestionsIfNeeded();
+    }
+  }
+
+  @override
+  void onTimeLimitChanged(int timeLimit) {
+    if (mounted) {
+      setState(() {
+        _selectedTimeLimit = timeLimit;
+        _timeRemaining = timeLimit;
+      });
+      _restartTimer();
+    }
+  }
+
+  @override
+  void onSoundEnabledChanged(bool enabled) {
+    // AI Native games always have sound - no action needed
+  }
+
+  @override
+  void onHapticFeedbackChanged(bool enabled) {
+    // AI Native games always have haptic - no action needed
+  }
+
+  @override
+  void onPreferencesLoaded(UserGamePreferences preferences) {
+    if (mounted) {
+      setState(() {
+        _selectedDifficulty = _mapGameDifficultyToAI(
+          preferences.preferredDifficulty,
+        );
+        _selectedTopic = preferences.preferredCategory;
+        _selectedQuestionCount = preferences.preferredQuestionCount;
+        _timeRemaining = preferences.preferredTimeLimit;
+        _selectedTimeLimit = preferences.preferredTimeLimit;
+      });
+
+      // Auto-start if all preferences are set
+      if (_selectedDifficulty != null &&
+          _selectedTopic != null &&
+          _selectedQuestionCount != null) {
+        _showDifficultySelection = false;
+        _showTopicSelection = false;
+        _showQuestionCountSelection = false;
+        _showTimeLimitSelection = false;
+        _startGame();
+      }
+    }
+  }
+
+  /// Regenerate questions when preferences change during gameplay
+  void _regenerateQuestionsIfNeeded() {
+    if (!_showResults && _questions != null && _questions!.isNotEmpty) {
+      _startGame(); // Restart with new preferences
+    }
+  }
+
+  /// Restart timer with current time limit
+  void _restartTimer() {
+    _timer?.cancel();
+    _timeRemaining = _selectedTimeLimit;
+    _startTimer();
+  }
+
+  /// Map GameDifficulty to AIDifficulty
+  AIDifficulty _mapGameDifficultyToAI(GameDifficulty difficulty) {
+    switch (difficulty) {
+      case GameDifficulty.easy:
+        return AIDifficulty.beginner;
+      case GameDifficulty.normal:
+        return AIDifficulty.intermediate;
+      case GameDifficulty.genius:
+        return AIDifficulty.advanced;
+      case GameDifficulty.quantum:
+        return AIDifficulty.expert;
+    }
+  }
+
+  /// Map AIDifficulty to GameDifficulty
+  GameDifficulty _mapAIDifficultyToGame(AIDifficulty difficulty) {
+    switch (difficulty) {
+      case AIDifficulty.beginner:
+        return GameDifficulty.easy;
+      case AIDifficulty.intermediate:
+        return GameDifficulty.normal;
+      case AIDifficulty.advanced:
+        return GameDifficulty.genius;
+      case AIDifficulty.expert:
+        return GameDifficulty.quantum;
+    }
   }
 
   Future<void> _loadUserPreferences() async {
@@ -95,19 +240,6 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
       if (kDebugMode) {
         print('Failed to load user preferences: $e');
       }
-    }
-  }
-
-  AIDifficulty _mapGameDifficultyToAI(GameDifficulty gameDifficulty) {
-    switch (gameDifficulty) {
-      case GameDifficulty.easy:
-        return AIDifficulty.beginner;
-      case GameDifficulty.normal:
-        return AIDifficulty.intermediate;
-      case GameDifficulty.genius:
-        return AIDifficulty.advanced;
-      case GameDifficulty.quantum:
-        return AIDifficulty.expert;
     }
   }
 
@@ -237,6 +369,21 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
     });
   }
 
+  void _selectAnswer(int answerIndex) {
+    if (_isAnswerSelected) return;
+
+    setState(() {
+      _selectedAnswerIndex = answerIndex;
+    });
+
+    // Auto-submit after selection with delay for visual feedback
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted && !_isAnswerSelected) {
+        _submitAnswer(answerIndex);
+      }
+    });
+  }
+
   void _submitAnswer(int answerIndex) {
     if (_isAnswerSelected || _questions == null) return;
 
@@ -305,6 +452,16 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
         };
         _showResults = true;
       });
+
+      // Update preferences from completed game
+      if (_selectedDifficulty != null &&
+          _selectedTopic != null &&
+          _selectedQuestionCount != null) {
+        updatePreferencesFromGameCompletion(
+          score: _score,
+          totalQuestions: _questions?.length ?? 0,
+        );
+      }
     }
   }
 
@@ -775,24 +932,47 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
     MathGeniusThemeData themeData,
     ColorScheme colorScheme,
   ) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 8,
-      mainAxisSpacing: 8,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 3.0,
-      children: question.options.asMap().entries.map((entry) {
-        final index = entry.key;
-        final option = entry.value;
-        return _buildAnswerOption(
-          index,
-          option,
-          question,
-          themeData,
-          colorScheme,
-        );
-      }).toList(),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Responsive grid based on screen width
+          final crossAxisCount = constraints.maxWidth > 600 ? 2 : 2;
+          final childAspectRatio = constraints.maxWidth > 600 ? 2.5 : 2.2;
+
+          return GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: childAspectRatio,
+            ),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: question.options.length,
+            itemBuilder: (context, index) {
+              return AnimatedBuilder(
+                animation: _fadeController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: 0.8 + (0.2 * _fadeController.value),
+                    child: Opacity(
+                      opacity: _fadeController.value,
+                      child: _buildEnhancedGridAnswerOption(
+                        index,
+                        question.options[index],
+                        question,
+                        themeData,
+                        colorScheme,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -801,24 +981,395 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
     MathGeniusThemeData themeData,
     ColorScheme colorScheme,
   ) {
-    return Column(
-      children: question.options.asMap().entries.map((entry) {
-        final index = entry.key;
-        final option = entry.value;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: _buildAnswerOption(
-            index,
-            option,
-            question,
-            themeData,
-            colorScheme,
-          ),
-        );
-      }).toList(),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: question.options.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          return AnimatedBuilder(
+            animation: _slideController,
+            builder: (context, child) {
+              final delay = index * 0.1;
+              final animation =
+                  Tween<Offset>(
+                    begin: const Offset(1.0, 0.0),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: _slideController,
+                      curve: Interval(delay, 1.0, curve: Curves.easeOutBack),
+                    ),
+                  );
+
+              return SlideTransition(
+                position: animation,
+                child: FadeTransition(
+                  opacity: _slideController,
+                  child: _buildEnhancedListAnswerOption(
+                    index,
+                    question.options[index],
+                    question,
+                    themeData,
+                    colorScheme,
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 
+  /// Enhanced grid answer option with improved visual design
+  Widget _buildEnhancedGridAnswerOption(
+    int index,
+    String option,
+    AIQuestion question,
+    MathGeniusThemeData themeData,
+    ColorScheme colorScheme,
+  ) {
+    final isSelected = _selectedAnswerIndex == index;
+    final isCorrect = _isAnswerSelected && index == question.correctAnswer;
+    final isWrong = _isAnswerSelected && isSelected && !isCorrect;
+
+    return GestureDetector(
+      onTap: _isAnswerSelected ? null : () => _selectAnswer(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOutCubic,
+        decoration: BoxDecoration(
+          gradient: _getAnswerGradient(
+            isSelected,
+            isCorrect,
+            isWrong,
+            colorScheme,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _getAnswerBorderColor(
+              isSelected,
+              isCorrect,
+              isWrong,
+              colorScheme,
+            ),
+            width: isSelected ? 3 : 2,
+          ),
+          boxShadow: [
+            if (isSelected || isCorrect)
+              BoxShadow(
+                color: _getAnswerShadowColor(isCorrect, isWrong, colorScheme),
+                blurRadius: isCorrect ? 12 : 8,
+                offset: const Offset(0, 4),
+              ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Background pattern for visual interest
+            if (isCorrect)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.green.withValues(alpha: 0.1),
+                        Colors.green.withValues(alpha: 0.05),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+            // Main content
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Option letter (A, B, C, D)
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: _getOptionLetterColor(
+                          isSelected,
+                          isCorrect,
+                          isWrong,
+                          colorScheme,
+                        ),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _getAnswerBorderColor(
+                            isSelected,
+                            isCorrect,
+                            isWrong,
+                            colorScheme,
+                          ),
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          String.fromCharCode(65 + index), // A, B, C, D
+                          style: themeData.typography.titleSmall.copyWith(
+                            color: _getAnswerTextColor(
+                              isSelected,
+                              isCorrect,
+                              isWrong,
+                              colorScheme,
+                            ),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Answer text
+                    Flexible(
+                      child: Text(
+                        option,
+                        style: themeData.typography.bodyLarge.copyWith(
+                          color: _getAnswerTextColor(
+                            isSelected,
+                            isCorrect,
+                            isWrong,
+                            colorScheme,
+                          ),
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+
+                    // Correct answer indicator
+                    if (isCorrect)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        child: Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 24,
+                        ),
+                      ),
+
+                    // Wrong answer indicator
+                    if (isWrong)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        child: Icon(Icons.cancel, color: Colors.red, size: 24),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Enhanced list answer option with improved visual design
+  Widget _buildEnhancedListAnswerOption(
+    int index,
+    String option,
+    AIQuestion question,
+    MathGeniusThemeData themeData,
+    ColorScheme colorScheme,
+  ) {
+    final isSelected = _selectedAnswerIndex == index;
+    final isCorrect = _isAnswerSelected && index == question.correctAnswer;
+    final isWrong = _isAnswerSelected && isSelected && !isCorrect;
+
+    return GestureDetector(
+      onTap: _isAnswerSelected ? null : () => _selectAnswer(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOutCubic,
+        height: 80,
+        decoration: BoxDecoration(
+          gradient: _getAnswerGradient(
+            isSelected,
+            isCorrect,
+            isWrong,
+            colorScheme,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: _getAnswerBorderColor(
+              isSelected,
+              isCorrect,
+              isWrong,
+              colorScheme,
+            ),
+            width: isSelected ? 3 : 2,
+          ),
+          boxShadow: [
+            if (isSelected || isCorrect)
+              BoxShadow(
+                color: _getAnswerShadowColor(isCorrect, isWrong, colorScheme),
+                blurRadius: isCorrect ? 16 : 12,
+                offset: const Offset(0, 6),
+              ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Animated background effect for correct answers
+            if (isCorrect)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.green.withValues(alpha: 0.1),
+                        Colors.green.withValues(alpha: 0.05),
+                        Colors.green.withValues(alpha: 0.1),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+            // Main content
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  // Option letter circle
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          _getOptionLetterColor(
+                            isSelected,
+                            isCorrect,
+                            isWrong,
+                            colorScheme,
+                          ),
+                          _getOptionLetterColor(
+                            isSelected,
+                            isCorrect,
+                            isWrong,
+                            colorScheme,
+                          ).withValues(alpha: 0.8),
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _getAnswerBorderColor(
+                          isSelected,
+                          isCorrect,
+                          isWrong,
+                          colorScheme,
+                        ),
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _getOptionLetterColor(
+                            isSelected,
+                            isCorrect,
+                            isWrong,
+                            colorScheme,
+                          ).withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        String.fromCharCode(65 + index), // A, B, C, D
+                        style: themeData.typography.headlineSmall.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 20),
+
+                  // Answer text
+                  Expanded(
+                    child: Text(
+                      option,
+                      style: themeData.typography.titleMedium.copyWith(
+                        color: _getAnswerTextColor(
+                          isSelected,
+                          isCorrect,
+                          isWrong,
+                          colorScheme,
+                        ),
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w600,
+                        fontSize: 18,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+
+                  // Status indicator
+                  if (isCorrect)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.check, color: Colors.white, size: 24),
+                    )
+                  else if (isWrong)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.close, color: Colors.white, size: 24),
+                    )
+                  else if (isSelected)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.touch_app,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ignore: unused_element
   Widget _buildAnswerOption(
     int index,
     String option,
@@ -1864,5 +2415,86 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
         ),
       ),
     );
+  }
+
+  // Enhanced visual design helper methods
+  LinearGradient _getAnswerGradient(
+    bool isSelected,
+    bool isCorrect,
+    bool isWrong,
+    ColorScheme colorScheme,
+  ) {
+    if (isCorrect) {
+      return LinearGradient(
+        colors: [
+          Colors.green.withValues(alpha: 0.2),
+          Colors.green.withValues(alpha: 0.1),
+        ],
+      );
+    } else if (isWrong) {
+      return LinearGradient(
+        colors: [
+          Colors.red.withValues(alpha: 0.2),
+          Colors.red.withValues(alpha: 0.1),
+        ],
+      );
+    } else if (isSelected) {
+      return LinearGradient(
+        colors: [
+          colorScheme.primary.withValues(alpha: 0.2),
+          colorScheme.primary.withValues(alpha: 0.1),
+        ],
+      );
+    } else {
+      return LinearGradient(
+        colors: [colorScheme.surface, colorScheme.surfaceContainerHighest],
+      );
+    }
+  }
+
+  Color _getAnswerBorderColor(
+    bool isSelected,
+    bool isCorrect,
+    bool isWrong,
+    ColorScheme colorScheme,
+  ) {
+    if (isCorrect) return Colors.green;
+    if (isWrong) return Colors.red;
+    if (isSelected) return colorScheme.primary;
+    return colorScheme.outline.withValues(alpha: 0.3);
+  }
+
+  Color _getAnswerTextColor(
+    bool isSelected,
+    bool isCorrect,
+    bool isWrong,
+    ColorScheme colorScheme,
+  ) {
+    if (isCorrect) return Colors.green.shade700;
+    if (isWrong) return Colors.red.shade700;
+    if (isSelected) return colorScheme.primary;
+    return colorScheme.onSurface;
+  }
+
+  Color _getOptionLetterColor(
+    bool isSelected,
+    bool isCorrect,
+    bool isWrong,
+    ColorScheme colorScheme,
+  ) {
+    if (isCorrect) return Colors.green;
+    if (isWrong) return Colors.red;
+    if (isSelected) return colorScheme.primary;
+    return colorScheme.primaryContainer;
+  }
+
+  Color _getAnswerShadowColor(
+    bool isCorrect,
+    bool isWrong,
+    ColorScheme colorScheme,
+  ) {
+    if (isCorrect) return Colors.green.withValues(alpha: 0.3);
+    if (isWrong) return Colors.red.withValues(alpha: 0.3);
+    return colorScheme.primary.withValues(alpha: 0.2);
   }
 }
