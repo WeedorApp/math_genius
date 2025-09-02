@@ -46,7 +46,7 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
   final List<bool> _answerHistory = [];
   double _averageResponseTime = 0.0;
   DateTime? _questionStartTime;
-  
+
   // Achievement tracking (simplified)
   final Set<String> _categoriesPlayed = {};
 
@@ -251,7 +251,7 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
       });
 
       _startTimer();
-      
+
       // Play game start sound
       try {
         final audioService = ref.read(audioServiceProvider);
@@ -259,10 +259,9 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
       } catch (e) {
         // Audio service not available - continue without sound
       }
-      
+
       // Track category for achievements
       _categoriesPlayed.add(_category.name);
-      
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -353,10 +352,10 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
 
   void _playAudioFeedback(bool isCorrect) {
     if (!_soundOn) return;
-    
+
     try {
       final audioService = ref.read(audioServiceProvider);
-      
+
       if (isCorrect) {
         if (_isOnFire) {
           audioService.playSound(SoundType.fire, category: _category.name);
@@ -376,15 +375,27 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
   void _checkAchievements(bool isCorrect) {
     // Simple achievement notifications
     if (isCorrect && _score == 1) {
-      _showSimpleAchievement('First Success!', '⭐ Got your first question correct!', Colors.amber);
+      _showSimpleAchievement(
+        'First Success!',
+        '⭐ Got your first question correct!',
+        Colors.amber,
+      );
     }
-    
+
     if (_currentStreak == 5) {
-      _showSimpleAchievement('Streak Master!', '⚡ 5 questions in a row!', Colors.blue);
+      _showSimpleAchievement(
+        'Streak Master!',
+        '⚡ 5 questions in a row!',
+        Colors.blue,
+      );
     }
-    
+
     if (_currentStreak == 10) {
-      _showSimpleAchievement('On Fire!', '🔥 10 questions in a row!', Colors.orange);
+      _showSimpleAchievement(
+        'On Fire!',
+        '🔥 10 questions in a row!',
+        Colors.orange,
+      );
     }
   }
 
@@ -482,20 +493,27 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
           // Game complete - check for perfect score
           final accuracy = (_score / _questions.length) * 100;
           if (accuracy == 100) {
-            _showSimpleAchievement('Perfect Score!', '🌟 100% accuracy achieved!', Colors.purple);
+            _showSimpleAchievement(
+              'Perfect Score!',
+              '🌟 100% accuracy achieved!',
+              Colors.purple,
+            );
           }
-          
+
           setState(() => _showResults = true);
           _pulseController.repeat(reverse: true);
-          
+
           // Play game complete sound
           try {
             final audioService = ref.read(audioServiceProvider);
-            audioService.playSound(SoundType.gameComplete, category: _category.name);
+            audioService.playSound(
+              SoundType.gameComplete,
+              category: _category.name,
+            );
           } catch (e) {
             // Continue without sound
           }
-          
+
           // Log game progress
           _logGameProgress();
         }
@@ -1050,7 +1068,7 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
                     ),
                   ],
                 ),
-                
+
                 // Achievement display removed for simplicity
               ],
             ),
@@ -1091,7 +1109,9 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
       debugPrint('   Grade: ${_userGradeLevel.name}');
       debugPrint('   Score: $_score/${_questions.length}');
       debugPrint('   Best Streak: $_bestStreak');
-      debugPrint('   Avg Response: ${(_averageResponseTime / 1000).toStringAsFixed(1)}s');
+      debugPrint(
+        '   Avg Response: ${(_averageResponseTime / 1000).toStringAsFixed(1)}s',
+      );
     }
   }
 

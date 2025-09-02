@@ -13,11 +13,11 @@ export 'services/ai_native_game_service.dart';
 export 'services/game_service.dart';
 export 'services/enhanced_game_service.dart';
 export 'services/unified_game_factory.dart';
-export 'services/game_progress_service.dart';
 
 // Widgets
 export 'widgets/base_game_screen.dart';
 export 'widgets/improved_unified_quiz.dart';
+export 'widgets/ultra_optimized_quiz.dart';
 export 'widgets/enhanced_game_selection_screen.dart';
 export 'widgets/ai_native_game_screen.dart';
 export 'widgets/chatgpt_enhanced_game_screen.dart';

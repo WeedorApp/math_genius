@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/barrel.dart';
 
 // Game widgets
-import '../widgets/improved_unified_quiz.dart';
+import '../widgets/ultra_optimized_quiz.dart';
 import '../widgets/ai_native_game_screen.dart';
 import '../widgets/chatgpt_enhanced_game_screen.dart';
 
@@ -30,7 +30,7 @@ class UnifiedGameFactory {
       case 'classic':
       case 'traditional':
       default:
-        return const ImprovedUnifiedQuiz();
+        return const UltraOptimizedQuiz();
     }
   }
 
