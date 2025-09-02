@@ -555,7 +555,13 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
       child: Row(
         children: [
           IconButton(
-            onPressed: () => context.pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/game-selection');
+              }
+            },
             icon: const Icon(Icons.arrow_back, color: Colors.white),
           ),
           Expanded(
@@ -859,7 +865,13 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
                     const SizedBox(width: 16),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () => context.pop(),
+                        onPressed: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/home');
+                          }
+                        },
                         icon: const Icon(Icons.home),
                         label: const Text('Home'),
                         style: ElevatedButton.styleFrom(
