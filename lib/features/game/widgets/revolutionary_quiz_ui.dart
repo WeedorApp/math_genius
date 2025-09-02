@@ -14,7 +14,7 @@ import '../services/game_service.dart';
 import '../../user_management/services/user_management_service.dart';
 
 /// Revolutionary Quiz UI - The Ultimate Educational App Experience
-/// Features: Glassmorphism, Advanced Animations, Perfect Typography, Gamification
+/// Features: Performance Optimized, Subtle Animations, Perfect Typography
 class RevolutionaryQuizUI extends ConsumerStatefulWidget {
   const RevolutionaryQuizUI({super.key});
 
@@ -120,25 +120,37 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   Future<void> _loadGame() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
       final gameService = ref.read(gameServiceProvider);
+      
+      // Performance optimized question generation
       final aiQuestions = await gameService.generateAIQuestions(
         category: _category,
         difficulty: _difficulty,
         count: _questionCount,
         gradeLevel: _userGradeLevel,
-        forceRefresh: true,
+        forceRefresh: false,  // Use cache for better performance
       );
 
-      final questions = aiQuestions.map((aiQ) => {
-        'question': aiQ.question,
-        'options': aiQ.options,
-        'correctIndex': aiQ.correctAnswer,
-        'hint': aiQ.hint,
-        'explanation': aiQ.explanation,
-      }).toList();
+      if (!mounted) return;  // Check mounted state after async operation
+
+      // Optimized conversion with pre-allocated list
+      final questions = List<Map<String, dynamic>>.generate(
+        aiQuestions.length,
+        (index) {
+          final aiQ = aiQuestions[index];
+          return {
+            'question': aiQ.question,
+            'options': aiQ.options,
+            'correctIndex': aiQ.correctAnswer,
+            'hint': aiQ.hint,
+            'explanation': aiQ.explanation,
+          };
+        },
+      );
 
       if (mounted) {
         setState(() {
@@ -479,24 +491,28 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    // Cache MediaQuery for performance
+    final mediaQuery = MediaQuery.of(context);
+    final screenSize = mediaQuery.size;
     final isTablet = screenSize.width > 600;
 
-    // Watch preferences for real-time updates
-    final currentPrefs = ref.watch(currentUserGamePreferencesProvider);
-    if (currentPrefs != null && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          final shouldReload = _category != currentPrefs.preferredCategory ||
-              _difficulty != currentPrefs.preferredDifficulty ||
-              _questionCount != currentPrefs.preferredQuestionCount ||
-              _timeLimit != currentPrefs.preferredTimeLimit;
+    // Optimize preference watching (only when needed)
+    if (!_isLoading && !_showResults) {
+      final currentPrefs = ref.watch(currentUserGamePreferencesProvider);
+      if (currentPrefs != null && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            final shouldReload = _category != currentPrefs.preferredCategory ||
+                _difficulty != currentPrefs.preferredDifficulty ||
+                _questionCount != currentPrefs.preferredQuestionCount ||
+                _timeLimit != currentPrefs.preferredTimeLimit;
 
-          if (shouldReload) {
-            _applySynchronizedPreferences(currentPrefs);
+            if (shouldReload) {
+              _applySynchronizedPreferences(currentPrefs);
+            }
           }
-        }
-      });
+        });
+      }
     }
 
     if (_isLoading) {
@@ -525,24 +541,26 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   Widget _buildRevolutionaryLoadingScreen() {
+    final categoryColor = _getCategoryColor(_category);
+    
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Container(
         decoration: BoxDecoration(
-          gradient: RadialGradient(
+          gradient: LinearGradient(
             colors: [
-              _getCategoryColor(_category).withValues(alpha: 0.2),
-              _getCategoryColor(_category).withValues(alpha: 0.05),
+              categoryColor.withValues(alpha: 0.05),
               Colors.white,
             ],
-            center: Alignment.center,
-            radius: 1.5,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Simple loading icon
+              // Optimized loading icon
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -550,28 +568,28 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: _getCategoryColor(_category).withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      spreadRadius: 5,
+                      color: categoryColor.withValues(alpha: 0.2),
+                      blurRadius: 15,
+                      spreadRadius: 2,
                     ),
                   ],
                 ),
                 child: Icon(
                   _getCategoryIcon(_category),
                   size: 48,
-                  color: _getCategoryColor(_category),
+                  color: categoryColor,
                 ),
               ),
               const SizedBox(height: 32),
               
-              // Premium loading indicator
+              // Optimized loading indicator
               SizedBox(
-                width: 60,
-                height: 60,
+                width: 40,
+                height: 40,
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(_getCategoryColor(_category)),
-                  strokeWidth: 4,
-                  backgroundColor: _getCategoryColor(_category).withValues(alpha: 0.2),
+                  valueColor: AlwaysStoppedAnimation<Color>(categoryColor),
+                  strokeWidth: 3,
+                  backgroundColor: categoryColor.withValues(alpha: 0.15),
                 ),
               ),
               
@@ -906,60 +924,57 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   Widget _buildPremiumStatsBar() {
+    // Cache calculations for performance
+    final accuracy = _answerHistory.isEmpty 
+        ? 0 
+        : ((_answerHistory.where((a) => a).length / _answerHistory.length) * 100).round();
+    
     return Container(
       height: 60,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: _getCategoryColor(_category).withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Color(0x14000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          // Score with animation
+          // Score
           Expanded(
-            child: _buildPremiumStatItem(
+            child: _buildOptimizedStatItem(
               Icons.star_rounded,
               '$_score',
               'Score',
               Colors.amber,
-              _score > 0,
             ),
           ),
           
-          Container(width: 1, height: 35, color: Colors.grey[200]),
+          Container(width: 1, height: 35, color: Colors.grey.shade200),
           
-          // Streak with fire effect
+          // Streak
           Expanded(
-            child: _buildPremiumStatItem(
+            child: _buildOptimizedStatItem(
               _isOnFire ? Icons.local_fire_department_rounded : Icons.flash_on_rounded,
               '$_currentStreak',
               'Streak',
               _isOnFire ? Colors.orange : Colors.blue,
-              _currentStreak > 0,
             ),
           ),
           
-          Container(width: 1, height: 35, color: Colors.grey[200]),
+          Container(width: 1, height: 35, color: Colors.grey.shade200),
           
-          // Accuracy with trend indicator
+          // Accuracy
           Expanded(
-            child: _buildPremiumStatItem(
+            child: _buildOptimizedStatItem(
               Icons.trending_up_rounded,
-              '${_answerHistory.isEmpty ? 0 : ((_answerHistory.where((a) => a).length / _answerHistory.length) * 100).round()}%',
+              '$accuracy%',
               'Accuracy',
               Colors.green,
-              _answerHistory.isNotEmpty,
             ),
           ),
         ],
@@ -967,7 +982,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     );
   }
 
-  Widget _buildPremiumStatItem(IconData icon, String value, String label, Color color, bool animate) {
+  Widget _buildOptimizedStatItem(IconData icon, String value, String label, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
@@ -979,7 +994,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(icon, color: color, size: 16),
@@ -999,10 +1014,9 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
           Text(
             label,
             style: TextStyle(
-              color: Colors.grey[600],
+              color: Colors.grey.shade600,
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -1013,72 +1027,46 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   Widget _buildPremiumQuestionCard(Map<String, dynamic> question) {
     final questionText = question['question'] as String? ?? 'Question not available';
     final hint = question['hint'] as String?;
+    final categoryColor = _getCategoryColor(_category);
     
     return Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(
-              minHeight: 120,
-              maxHeight: 300,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.white,
-                  Colors.grey.shade50,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: _getCategoryColor(_category).withValues(alpha: 0.2),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 25,
-                  offset: const Offset(0, 8),
-                  spreadRadius: 2,
-                ),
-                BoxShadow(
-                  color: _getCategoryColor(_category).withValues(alpha: 0.1),
-                  blurRadius: 15,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+      width: double.infinity,
+      constraints: const BoxConstraints(
+        minHeight: 120,
+        maxHeight: 280,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: categoryColor.withValues(alpha: 0.2),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Simple category icon
+                  // Optimized category icon
                   Container(
-                    width: 50,
-                    height: 50,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          _getCategoryColor(_category).withValues(alpha: 0.15),
-                          _getCategoryColor(_category).withValues(alpha: 0.25),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _getCategoryColor(_category).withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          spreadRadius: 1,
-                        ),
-                      ],
+                      color: categoryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       _getCategoryIcon(_category),
-                      size: 28,
-                      color: _getCategoryColor(_category),
+                      size: 26,
+                      color: categoryColor,
                     ),
                   ),
                   
@@ -1147,49 +1135,66 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
 
   Widget _buildRevolutionaryAnswerGrid(List<String> options, bool isTablet) {
     if (options.isEmpty) {
-      return Center(
+      return const Center(
         child: Text(
           'No answer options available',
           style: TextStyle(
             fontSize: 16,
-            color: Colors.grey[600],
+            color: Colors.grey,
           ),
         ),
       );
     }
 
-    // Ensure we have at least 2 options, max 4
-    final validOptions = options.take(4).toList();
+    // Ensure we have valid options (performance optimized)
+    final validOptions = options.length > 4 ? options.sublist(0, 4) : options;
     if (validOptions.length < 2) {
-      return Center(
+      return const Center(
         child: Text(
           'Invalid question format',
           style: TextStyle(
             fontSize: 16,
-            color: Colors.grey[600],
+            color: Colors.grey,
           ),
         ),
       );
     }
 
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isTablet ? 2 : 1,
-        childAspectRatio: isTablet ? 4.8 : 5.2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: validOptions.length,
-      itemBuilder: (context, index) {
-        if (index >= validOptions.length) {
-          return const SizedBox.shrink();
-        }
-        
-        return _buildRevolutionaryAnswerButton(validOptions[index], index);
-      },
-    );
+    // Use Column for better performance than GridView
+    if (isTablet && validOptions.length >= 4) {
+      return Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: _buildRevolutionaryAnswerButton(validOptions[0], 0)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildRevolutionaryAnswerButton(validOptions[1], 1)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _buildRevolutionaryAnswerButton(validOptions[2], 2)),
+              const SizedBox(width: 12),
+              if (validOptions.length > 3)
+                Expanded(child: _buildRevolutionaryAnswerButton(validOptions[3], 3))
+              else
+                const Expanded(child: SizedBox()),
+            ],
+          ),
+        ],
+      );
+    } else {
+      // Single column for mobile or fewer options
+      return Column(
+        children: validOptions.asMap().entries.map((entry) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildRevolutionaryAnswerButton(entry.value, entry.key),
+          );
+        }).toList(),
+      );
+    }
   }
 
   Widget _buildRevolutionaryAnswerButton(String option, int index) {
@@ -1198,15 +1203,15 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
       return const SizedBox.shrink();
     }
 
-    final colors = [
-      [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)], // Blue gradient
-      [const Color(0xFF10B981), const Color(0xFF047857)], // Green gradient
-      [const Color(0xFFF59E0B), const Color(0xFFD97706)], // Orange gradient
-      [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)], // Purple gradient
+    // Performance optimized color selection
+    const colors = [
+      Color(0xFF3B82F6), // Blue
+      Color(0xFF10B981), // Green  
+      Color(0xFFF59E0B), // Orange
+      Color(0xFF8B5CF6), // Purple
     ];
     
-    final safeIndex = index.clamp(0, colors.length - 1);
-    final colorGradient = colors[safeIndex];
+    final buttonColor = colors[index.clamp(0, colors.length - 1)];
     
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 2),
@@ -1214,9 +1219,9 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: colorGradient[0].withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: buttonColor.withValues(alpha: 0.15),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1224,8 +1229,6 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
         onPressed: _answerSubmitted ? null : () {
           if (kDebugMode) {
             debugPrint('🎯 Answer button $index tapped - Option: $option');
-            debugPrint('🎯 Current question index: $_currentIndex');
-            debugPrint('🎯 Total questions: ${_questions.length}');
           }
           
           // Immediate haptic feedback to confirm click
@@ -1236,7 +1239,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
           _submitAnswer(index);
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: _answerSubmitted ? Colors.grey : colorGradient[0],
+          backgroundColor: _answerSubmitted ? Colors.grey.shade400 : buttonColor,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

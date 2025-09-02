@@ -25,13 +25,16 @@ import 'package:http/http.dart' as http;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Enable performance optimizations
+  PerformanceConfig.enablePerformanceOptimizations();
+
   if (kDebugMode) {
-    print('Starting Math Genius app initialization...');
+    debugPrint('Starting Math Genius app initialization...');
   }
 
   try {
     if (kDebugMode) {
-      print('Initializing Firebase...');
+      debugPrint('Initializing Firebase...');
     }
     // Initialize Firebase
     await Firebase.initializeApp(
