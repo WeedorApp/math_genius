@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-// Removed unnecessary import
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 // Core imports
@@ -21,7 +21,8 @@ class ImprovedUnifiedQuiz extends ConsumerStatefulWidget {
   const ImprovedUnifiedQuiz({super.key});
 
   @override
-  ConsumerState<ImprovedUnifiedQuiz> createState() => _ImprovedUnifiedQuizState();
+  ConsumerState<ImprovedUnifiedQuiz> createState() =>
+      _ImprovedUnifiedQuizState();
 }
 
 class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
@@ -29,7 +30,6 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
         GamePreferencesMixin<ImprovedUnifiedQuiz>,
         UnifiedPreferenceSyncMixin<ImprovedUnifiedQuiz>,
         TickerProviderStateMixin {
-  
   // Game state
   List<Map<String, dynamic>> _questions = [];
   int _currentIndex = 0;
@@ -38,7 +38,7 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
   bool _showResults = false;
   Timer? _timer;
   int _timeRemaining = 30;
-  
+
   // Enhanced game mechanics
   int _currentStreak = 0;
   int _bestStreak = 0;
@@ -47,6 +47,9 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
   double _averageResponseTime = 0.0;
   DateTime? _questionStartTime;
   
+  // Achievement tracking (simplified)
+  final Set<String> _categoriesPlayed = {};
+
   // Animation controllers
   late AnimationController _fadeController;
   late AnimationController _pulseController;
@@ -77,17 +80,20 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0)
-        .animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
-    
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1)
-        .animate(CurvedAnimation(parent: _pulseController, curve: Curves.elasticOut));
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
+
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.elasticOut),
+    );
 
     _fadeController.forward();
   }
@@ -186,7 +192,7 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
     try {
       final userService = ref.read(userManagementServiceProvider);
       final currentUser = await userService.getCurrentUser();
-      
+
       if (currentUser?.gradeLevel != null) {
         setState(() {
           _userGradeLevel = currentUser!.gradeLevel!;
@@ -199,7 +205,7 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
 
   Future<void> _loadGame() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final gameService = ref.read(gameServiceProvider);
       final aiQuestions = await gameService.generateAIQuestions(
@@ -214,20 +220,26 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
         setState(() => _isLoading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No questions generated. Please try again.')),
+            const SnackBar(
+              content: Text('No questions generated. Please try again.'),
+            ),
           );
         }
         return;
       }
 
       setState(() {
-        _questions = aiQuestions.map((q) => {
-          'question': q.question,
-          'options': q.options,
-          'correct': q.correctAnswer.clamp(0, q.options.length - 1),
-          'hint': q.hint,
-          'explanation': q.explanation,
-        }).toList();
+        _questions = aiQuestions
+            .map(
+              (q) => {
+                'question': q.question,
+                'options': q.options,
+                'correct': q.correctAnswer.clamp(0, q.options.length - 1),
+                'hint': q.hint,
+                'explanation': q.explanation,
+              },
+            )
+            .toList();
         _currentIndex = 0;
         _score = 0;
         _currentStreak = 0;
@@ -237,14 +249,26 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
         _questionStartTime = DateTime.now();
         _isLoading = false;
       });
-      
+
       _startTimer();
+      
+      // Play game start sound
+      try {
+        final audioService = ref.read(audioServiceProvider);
+        audioService.playSound(SoundType.gameStart, category: _category.name);
+      } catch (e) {
+        // Audio service not available - continue without sound
+      }
+      
+      // Track category for achievements
+      _categoriesPlayed.add(_category.name);
+      
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading game: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading game: $e')));
       }
     }
   }
@@ -269,17 +293,17 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
       return;
     }
 
-    final responseTime = _questionStartTime != null 
+    final responseTime = _questionStartTime != null
         ? DateTime.now().difference(_questionStartTime!).inMilliseconds
         : 0;
-    
+
     final isCorrect = answerIndex == _questions[_currentIndex]['correct'];
     final question = _questions[_currentIndex];
-    
+
     // Update statistics
     _answerHistory.add(isCorrect);
     _updateGameStats(isCorrect, responseTime);
-    
+
     if (isCorrect) {
       setState(() {
         _score++;
@@ -301,6 +325,12 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
     // Show feedback
     _showEnhancedFeedback(isCorrect, question);
 
+    // Play sound effects
+    _playAudioFeedback(isCorrect);
+
+    // Check for achievements
+    _checkAchievements(isCorrect);
+
     // Haptic feedback
     if (_hapticOn) {
       if (isCorrect) {
@@ -316,8 +346,84 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
 
   void _updateGameStats(bool isCorrect, int responseTime) {
     final totalAnswers = _answerHistory.length;
-    _averageResponseTime = ((_averageResponseTime * (totalAnswers - 1)) + responseTime) / totalAnswers;
+    _averageResponseTime =
+        ((_averageResponseTime * (totalAnswers - 1)) + responseTime) /
+        totalAnswers;
   }
+
+  void _playAudioFeedback(bool isCorrect) {
+    if (!_soundOn) return;
+    
+    try {
+      final audioService = ref.read(audioServiceProvider);
+      
+      if (isCorrect) {
+        if (_isOnFire) {
+          audioService.playSound(SoundType.fire, category: _category.name);
+        } else if (_currentStreak >= 3) {
+          audioService.playSound(SoundType.streak, category: _category.name);
+        } else {
+          audioService.playSound(SoundType.correct, category: _category.name);
+        }
+      } else {
+        audioService.playSound(SoundType.incorrect, category: _category.name);
+      }
+    } catch (e) {
+      // Audio service not available - continue without sound
+    }
+  }
+
+  void _checkAchievements(bool isCorrect) {
+    // Simple achievement notifications
+    if (isCorrect && _score == 1) {
+      _showSimpleAchievement('First Success!', '⭐ Got your first question correct!', Colors.amber);
+    }
+    
+    if (_currentStreak == 5) {
+      _showSimpleAchievement('Streak Master!', '⚡ 5 questions in a row!', Colors.blue);
+    }
+    
+    if (_currentStreak == 10) {
+      _showSimpleAchievement('On Fire!', '🔥 10 questions in a row!', Colors.orange);
+    }
+  }
+
+  void _showSimpleAchievement(String title, String message, Color color) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.emoji_events, color: Colors.white, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(message, style: const TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: color,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  // Complex achievement celebration removed for simplicity
 
   void _showEnhancedFeedback(bool isCorrect, Map<String, dynamic> question) {
     if (!mounted) return;
@@ -373,8 +479,25 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
           });
           _startTimer();
         } else {
+          // Game complete - check for perfect score
+          final accuracy = (_score / _questions.length) * 100;
+          if (accuracy == 100) {
+            _showSimpleAchievement('Perfect Score!', '🌟 100% accuracy achieved!', Colors.purple);
+          }
+          
           setState(() => _showResults = true);
           _pulseController.repeat(reverse: true);
+          
+          // Play game complete sound
+          try {
+            final audioService = ref.read(audioServiceProvider);
+            audioService.playSound(SoundType.gameComplete, category: _category.name);
+          } catch (e) {
+            // Continue without sound
+          }
+          
+          // Log game progress
+          _logGameProgress();
         }
       }
     });
@@ -382,7 +505,7 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
 
   void _showHint(String hint) {
     if (!mounted) return;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -409,15 +532,16 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
   Widget build(BuildContext context) {
     // Watch preferences for real-time updates
     final currentPrefs = ref.watch(currentUserGamePreferencesProvider);
-    
+
     if (currentPrefs != null && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           final categoryChanged = _category != currentPrefs.preferredCategory;
-          final shouldReload = _difficulty != currentPrefs.preferredDifficulty ||
-                              categoryChanged ||
-                              _questionCount != currentPrefs.preferredQuestionCount ||
-                              _timeLimit != currentPrefs.preferredTimeLimit;
+          final shouldReload =
+              _difficulty != currentPrefs.preferredDifficulty ||
+              categoryChanged ||
+              _questionCount != currentPrefs.preferredQuestionCount ||
+              _timeLimit != currentPrefs.preferredTimeLimit;
 
           if (shouldReload) {
             applySynchronizedPreferences(currentPrefs);
@@ -453,7 +577,9 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
                 ),
                 const SizedBox(height: 24),
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(_getCategoryColor(_category)),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _getCategoryColor(_category),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -476,9 +602,7 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
     }
 
     if (_questions.isEmpty) {
-      return const Scaffold(
-        body: Center(child: Text('Loading questions...')),
-      );
+      return const Scaffold(body: Center(child: Text('Loading questions...')));
     }
 
     return _buildQuestionScreen();
@@ -630,7 +754,13 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
               children: [
                 const Icon(Icons.star, color: Colors.amber, size: 20),
                 const SizedBox(height: 4),
-                Text('$_score', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  '$_score',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const Text('Score', style: TextStyle(fontSize: 12)),
               ],
             ),
@@ -715,7 +845,8 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
               ),
               textAlign: TextAlign.center,
             ),
-            if (question['hint'] != null && question['hint'].toString().isNotEmpty) ...[
+            if (question['hint'] != null &&
+                question['hint'].toString().isNotEmpty) ...[
               const SizedBox(height: 12),
               TextButton.icon(
                 onPressed: () => _showHint(question['hint']),
@@ -737,7 +868,7 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
       children: options.asMap().entries.map((entry) {
         final index = entry.key;
         final option = entry.value;
-        
+
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: SizedBox(
@@ -749,7 +880,9 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
                 backgroundColor: _getOptionColor(index),
                 foregroundColor: Colors.white,
                 elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: Row(
                 children: [
@@ -775,7 +908,10 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
                   Expanded(
                     child: Text(
                       option,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -790,12 +926,26 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
   }
 
   Widget _buildResultsScreen() {
-    final accuracy = _questions.isEmpty ? 0.0 : (_score / _questions.length) * 100;
+    final accuracy = _questions.isEmpty
+        ? 0.0
+        : (_score / _questions.length) * 100;
     final isExcellent = accuracy >= 90;
     final isGood = accuracy >= 70;
-    final resultColor = isExcellent ? Colors.green : isGood ? Colors.orange : Colors.red;
-    final resultIcon = isExcellent ? Icons.star : isGood ? Icons.thumb_up : Icons.trending_up;
-    final resultMessage = isExcellent ? 'Excellent!' : isGood ? 'Good Job!' : 'Keep Practicing!';
+    final resultColor = isExcellent
+        ? Colors.green
+        : isGood
+        ? Colors.orange
+        : Colors.red;
+    final resultIcon = isExcellent
+        ? Icons.star
+        : isGood
+        ? Icons.thumb_up
+        : Icons.trending_up;
+    final resultMessage = isExcellent
+        ? 'Excellent!'
+        : isGood
+        ? 'Good Job!'
+        : 'Keep Practicing!';
 
     return Scaffold(
       body: Container(
@@ -829,7 +979,9 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
                 // Stats card
                 Card(
                   elevation: 8,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
@@ -837,9 +989,24 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildStatColumn('Score', '$_score/${_questions.length}', Icons.star, Colors.amber),
-                            _buildStatColumn('Best Streak', '$_bestStreak', Icons.flash_on, Colors.blue),
-                            _buildStatColumn('Accuracy', '${accuracy.toStringAsFixed(1)}%', Icons.track_changes, resultColor),
+                            _buildStatColumn(
+                              'Score',
+                              '$_score/${_questions.length}',
+                              Icons.star,
+                              Colors.amber,
+                            ),
+                            _buildStatColumn(
+                              'Best Streak',
+                              '$_bestStreak',
+                              Icons.flash_on,
+                              Colors.blue,
+                            ),
+                            _buildStatColumn(
+                              'Accuracy',
+                              '${accuracy.toStringAsFixed(1)}%',
+                              Icons.track_changes,
+                              resultColor,
+                            ),
                           ],
                         ),
                       ],
@@ -883,6 +1050,8 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
                     ),
                   ],
                 ),
+                
+                // Achievement display removed for simplicity
               ],
             ),
           ),
@@ -891,22 +1060,46 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
     );
   }
 
-  Widget _buildStatColumn(String label, String value, IconData icon, Color color) {
+  Widget _buildStatColumn(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Icon(icon, color: color, size: 24),
         const SizedBox(height: 8),
-        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
+  }
+
+  // Progress saving simplified for now
+  void _logGameProgress() {
+    if (kDebugMode) {
+      debugPrint('📊 Game Progress:');
+      debugPrint('   Category: ${_category.name}');
+      debugPrint('   Grade: ${_userGradeLevel.name}');
+      debugPrint('   Score: $_score/${_questions.length}');
+      debugPrint('   Best Streak: $_bestStreak');
+      debugPrint('   Avg Response: ${(_averageResponseTime / 1000).toStringAsFixed(1)}s');
+    }
   }
 
   void _playAgain() {
     _timer?.cancel();
     _fadeController.reset();
     _pulseController.reset();
-    
+
     setState(() {
       _currentIndex = 0;
       _score = 0;
@@ -919,52 +1112,85 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
       _averageResponseTime = 0.0;
       _questionStartTime = DateTime.now();
     });
-    
+
     _fadeController.forward();
     _loadGame();
   }
 
   // Helper methods
   Color _getOptionColor(int index) {
-    final colors = [Colors.blue.shade600, Colors.green.shade600, Colors.orange.shade600, Colors.red.shade600];
+    final colors = [
+      Colors.blue.shade600,
+      Colors.green.shade600,
+      Colors.orange.shade600,
+      Colors.red.shade600,
+    ];
     return colors[index % colors.length];
   }
 
   Color _getCategoryColor(GameCategory category) {
     switch (category) {
-      case GameCategory.addition: return Colors.green.shade600;
-      case GameCategory.subtraction: return Colors.blue.shade600;
-      case GameCategory.multiplication: return Colors.orange.shade600;
-      case GameCategory.division: return Colors.red.shade600;
-      case GameCategory.fractions: return Colors.purple.shade600;
-      case GameCategory.decimals: return Colors.teal.shade600;
-      case GameCategory.percentages: return Colors.indigo.shade600;
-      case GameCategory.geometry: return Colors.pink.shade600;
-      case GameCategory.algebra: return Colors.deepOrange.shade600;
-      case GameCategory.calculus: return Colors.brown.shade600;
-      case GameCategory.wordProblems: return Colors.cyan.shade600;
-      case GameCategory.patterns: return Colors.lime.shade600;
-      case GameCategory.measurement: return Colors.amber.shade600;
-      case GameCategory.dataAnalysis: return Colors.blueGrey.shade600;
+      case GameCategory.addition:
+        return Colors.green.shade600;
+      case GameCategory.subtraction:
+        return Colors.blue.shade600;
+      case GameCategory.multiplication:
+        return Colors.orange.shade600;
+      case GameCategory.division:
+        return Colors.red.shade600;
+      case GameCategory.fractions:
+        return Colors.purple.shade600;
+      case GameCategory.decimals:
+        return Colors.teal.shade600;
+      case GameCategory.percentages:
+        return Colors.indigo.shade600;
+      case GameCategory.geometry:
+        return Colors.pink.shade600;
+      case GameCategory.algebra:
+        return Colors.deepOrange.shade600;
+      case GameCategory.calculus:
+        return Colors.brown.shade600;
+      case GameCategory.wordProblems:
+        return Colors.cyan.shade600;
+      case GameCategory.patterns:
+        return Colors.lime.shade600;
+      case GameCategory.measurement:
+        return Colors.amber.shade600;
+      case GameCategory.dataAnalysis:
+        return Colors.blueGrey.shade600;
     }
   }
 
   IconData _getCategoryIcon(GameCategory category) {
     switch (category) {
-      case GameCategory.addition: return Icons.add_circle;
-      case GameCategory.subtraction: return Icons.remove_circle;
-      case GameCategory.multiplication: return Icons.close;
-      case GameCategory.division: return Icons.pie_chart;
-      case GameCategory.fractions: return Icons.pie_chart_outline;
-      case GameCategory.decimals: return Icons.looks_one;
-      case GameCategory.percentages: return Icons.percent;
-      case GameCategory.geometry: return Icons.pentagon;
-      case GameCategory.algebra: return Icons.functions;
-      case GameCategory.calculus: return Icons.calculate;
-      case GameCategory.wordProblems: return Icons.description;
-      case GameCategory.patterns: return Icons.pattern;
-      case GameCategory.measurement: return Icons.straighten;
-      case GameCategory.dataAnalysis: return Icons.analytics;
+      case GameCategory.addition:
+        return Icons.add_circle;
+      case GameCategory.subtraction:
+        return Icons.remove_circle;
+      case GameCategory.multiplication:
+        return Icons.close;
+      case GameCategory.division:
+        return Icons.pie_chart;
+      case GameCategory.fractions:
+        return Icons.pie_chart_outline;
+      case GameCategory.decimals:
+        return Icons.looks_one;
+      case GameCategory.percentages:
+        return Icons.percent;
+      case GameCategory.geometry:
+        return Icons.pentagon;
+      case GameCategory.algebra:
+        return Icons.functions;
+      case GameCategory.calculus:
+        return Icons.calculate;
+      case GameCategory.wordProblems:
+        return Icons.description;
+      case GameCategory.patterns:
+        return Icons.pattern;
+      case GameCategory.measurement:
+        return Icons.straighten;
+      case GameCategory.dataAnalysis:
+        return Icons.analytics;
     }
   }
 
@@ -972,7 +1198,7 @@ class _ImprovedUnifiedQuizState extends ConsumerState<ImprovedUnifiedQuiz>
   @override
   void applyGamePreferences(UserGamePreferences prefs) {
     final categoryChanged = _category != prefs.preferredCategory;
-    
+
     if (categoryChanged) {
       final gameService = ref.read(gameServiceProvider);
       gameService.clearCachedQuestionsForCategory(_category);

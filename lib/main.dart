@@ -128,6 +128,10 @@ void main() async {
           accessibilityServiceProvider.overrideWithValue(
             AccessibilityService(),
           ),
+          audioServiceProvider.overrideWithValue(
+            AudioService(prefs),
+          ),
+          // Achievement and progress services will be added in future updates
         ],
         child: GlobalPreferencesListener(child: const MathGeniusApp()),
       ),

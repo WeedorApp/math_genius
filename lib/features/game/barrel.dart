@@ -13,6 +13,7 @@ export 'services/ai_native_game_service.dart';
 export 'services/game_service.dart';
 export 'services/enhanced_game_service.dart';
 export 'services/unified_game_factory.dart';
+export 'services/game_progress_service.dart';
 
 // Widgets
 export 'widgets/base_game_screen.dart';

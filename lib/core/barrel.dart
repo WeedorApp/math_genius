@@ -54,6 +54,9 @@ export 'error_handling/barrel.dart';
 // Performance Tracking
 export 'performance/barrel.dart';
 
+// Audio System
+export 'audio/barrel.dart';
+
 // Accessibility
 export 'accessibility/barrel.dart';
 
