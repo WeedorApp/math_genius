@@ -43,12 +43,10 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   DateTime? _questionStartTime;
   final Set<String> _categoriesPlayed = {};
 
-  // Simplified animation controllers
+  // Minimal animation controllers
   late AnimationController _slideController;
-  late AnimationController _pulseController;
   
   late Animation<Offset> _slideAnimation;
-  late Animation<double> _pulseAnimation;
 
   // Preferences
   GameDifficulty _difficulty = GameDifficulty.normal;
@@ -70,29 +68,19 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   void _initializeAnimations() {
-    // Simple slide animation for question transitions
+    // Extremely subtle slide animation for question transitions only
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    // Pulse animation for timer warnings only
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 150),  // Very fast and subtle
       vsync: this,
     );
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.3, 0.0),
+      begin: const Offset(0.02, 0.0),  // Barely noticeable slide
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
       curve: Curves.easeOut,
     ));
-
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
   }
 
   Future<void> _loadUserGradeLevel() async {
@@ -196,9 +184,8 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
       if (mounted && _timeRemaining > 0) {
         setState(() => _timeRemaining--);
         
-        // Time warning effects
+        // Time warning (sound only, no animations)
         if (_timeRemaining == 10) {
-          _pulseController.repeat();
           try {
             final audioService = ref.read(audioServiceProvider);
             audioService.playSound(SoundType.timeWarning);
@@ -372,7 +359,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   void _moveToNextQuestion() {
-    Future.delayed(const Duration(milliseconds: 800), () {
+    Future.delayed(const Duration(milliseconds: 400), () {  // Much faster transition
       if (mounted) {
         setState(() {
           if (_currentIndex < _questions.length - 1) {
@@ -387,8 +374,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
             if (kDebugMode) {
               debugPrint('✅ Moved to question ${_currentIndex + 1}/${_questions.length}');
             }
-            _pulseController.stop();
-            _pulseController.reset();
+            // No pulse controller to reset
           } else {
             // Game complete
             final accuracy = (_score / _questions.length) * 100;
@@ -859,42 +845,34 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
                         
                         const SizedBox(width: 16),
                         
-                        // Premium timer with pulsing effect
-                        AnimatedBuilder(
-                          animation: _timeRemaining <= 10 ? _pulseAnimation : _pulseAnimation,
-                          builder: (context, child) {
-                            return Transform.scale(
-                              scale: _timeRemaining <= 10 ? _pulseAnimation.value : 1.0,
-                              child: Container(
-                                width: 70,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: _timeRemaining <= 10 
-                                        ? [Colors.red, const Color(0xFFB91C1C)]
-                                        : [Colors.white.withValues(alpha: 0.25), Colors.white.withValues(alpha: 0.15)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '$_timeRemaining',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+                        // Simple timer (no animations)
+                        Container(
+                          width: 70,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: _timeRemaining <= 10 
+                                  ? [Colors.red.shade400, Colors.red.shade600]
+                                  : [Colors.white.withValues(alpha: 0.25), Colors.white.withValues(alpha: 0.15)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$_timeRemaining',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
-                            );
-                          },
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -1703,10 +1681,8 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
       // Cancel timer first
       _timer?.cancel();
       
-      // Reset simplified animations
+      // Reset slide animation
       _slideController.reset();
-      _pulseController.stop();
-      _pulseController.reset();
 
       setState(() {
         _currentIndex = 0;
@@ -1834,12 +1810,9 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     // Cancel timer first
     _timer?.cancel();
     
-    // Stop and dispose simplified animation controllers
+    // Stop and dispose slide controller
     _slideController.stop();
     _slideController.dispose();
-    
-    _pulseController.stop();
-    _pulseController.dispose();
     
     super.dispose();
   }
@@ -1893,17 +1866,11 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     return true;
   }
 
-  /// Performance monitoring for animations (simplified)
+  /// Performance monitoring for animations (minimal)
   void _monitorAnimationPerformance() {
-    if (kDebugMode) {
-      final activeAnimations = [
-        if (_slideController.isAnimating) 'slide',
-        if (_pulseController.isAnimating) 'pulse',
-      ];
-      
-      // Only log when animations are active
-      if (activeAnimations.isNotEmpty && _currentIndex == 0) {
-        debugPrint('🎭 Active animations: ${activeAnimations.join(', ')}');
+    if (kDebugMode && _currentIndex == 0) {
+      if (_slideController.isAnimating) {
+        debugPrint('🎭 Subtle slide animation active');
       }
     }
   }
