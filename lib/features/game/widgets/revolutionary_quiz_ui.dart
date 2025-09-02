@@ -22,8 +22,7 @@ class RevolutionaryQuizUI extends ConsumerStatefulWidget {
   ConsumerState<RevolutionaryQuizUI> createState() => _RevolutionaryQuizUIState();
 }
 
-class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
-    with TickerProviderStateMixin {
+class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
   // Game state
   List<Map<String, dynamic>> _questions = [];
   int _currentIndex = 0;
@@ -43,10 +42,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   DateTime? _questionStartTime;
   final Set<String> _categoriesPlayed = {};
 
-  // Minimal animation controllers
-  late AnimationController _slideController;
-  
-  late Animation<Offset> _slideAnimation;
+  // No animation controllers - static interface for best performance
 
   // Preferences
   GameDifficulty _difficulty = GameDifficulty.normal;
@@ -62,25 +58,8 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
     _loadUserGradeLevel();
     _loadPreferencesAndGame();
-  }
-
-  void _initializeAnimations() {
-    // Extremely subtle slide animation for question transitions only
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 150),  // Very fast and subtle
-      vsync: this,
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.02, 0.0),  // Barely noticeable slide
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOut,
-    ));
   }
 
   Future<void> _loadUserGradeLevel() async {
@@ -168,7 +147,6 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
         });
 
         _startTimer();
-        _slideController.forward();
 
         // Play game start sound
         try {
@@ -379,14 +357,10 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
             _timeRemaining = _timeLimit;
             _questionStartTime = DateTime.now();
             _answerSubmitted = false;  // Reset for new question
-            _slideController.reset();
-            _slideController.forward();
-            
             // Log state transition
             if (kDebugMode) {
               debugPrint('✅ Moved to question ${_currentIndex + 1}/${_questions.length}');
             }
-            // No pulse controller to reset
           } else {
             // Game complete
             final accuracy = (_score / _questions.length) * 100;
@@ -685,37 +659,34 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
               
               // Main content with advanced animations
               Expanded(
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 24 : 16,
-                      vertical: 8,
-                    ),
-                    child: Column(
-                      children: [
-                        // Enhanced stats with micro-interactions
-                        _buildPremiumStatsBar(),
-                        
-                        const SizedBox(height: 12),
-                        
-                        // Premium question card with advanced effects
-                        Flexible(
-                          flex: 2,
-                          child: _buildPremiumQuestionCard(question),
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        // Revolutionary answer grid
-                        Flexible(
-                          flex: 3,
-                          child: _buildRevolutionaryAnswerGrid(options, isTablet),
-                        ),
-                        
-                        const SizedBox(height: 4),
-                      ],
-                    ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 24 : 16,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    children: [
+                      // Enhanced stats
+                      _buildPremiumStatsBar(),
+                      
+                      const SizedBox(height: 12),
+                      
+                      // Question card (no animations)
+                      Flexible(
+                        flex: 2,
+                        child: _buildPremiumQuestionCard(question),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Answer grid (no animations)
+                      Flexible(
+                        flex: 3,
+                        child: _buildRevolutionaryAnswerGrid(options, isTablet),
+                      ),
+                      
+                      const SizedBox(height: 4),
+                    ],
                   ),
                 ),
               ),
@@ -1684,8 +1655,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
       // Cancel timer first
       _timer?.cancel();
       
-      // Reset slide animation
-      _slideController.reset();
+      // No animations to reset
 
       setState(() {
         _currentIndex = 0;
@@ -1813,10 +1783,6 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     // Cancel timer first
     _timer?.cancel();
     
-    // Stop and dispose slide controller
-    _slideController.stop();
-    _slideController.dispose();
-    
     super.dispose();
   }
 
@@ -1869,12 +1835,10 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     return true;
   }
 
-  /// Performance monitoring for animations (minimal)
+  /// Performance monitoring (no animations)
   void _monitorAnimationPerformance() {
     if (kDebugMode && _currentIndex == 0) {
-      if (_slideController.isAnimating) {
-        debugPrint('🎭 Subtle slide animation active');
-      }
+      debugPrint('🎯 Static interface - no animations running');
     }
   }
 }
