@@ -260,13 +260,26 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
             true, // Always get fresh questions to reflect preference changes
       );
 
+      // Safety check: Ensure we have valid questions
+      if (aiQuestions.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No questions generated. Please try again.')),
+          );
+        }
+        return;
+      }
+
       setState(() {
         _questions = aiQuestions
             .map(
               (q) => {
                 'question': q.question,
                 'options': q.options,
-                'correct': q.correctAnswer,
+                'correct': q.correctAnswer.clamp(0, q.options.length - 1), // Clamp to valid range
                 'category': q.category.name, // Store category for verification
               },
             )
@@ -313,6 +326,12 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   void _submitAnswer(int answerIndex) {
     _timer?.cancel();
 
+    // Safety check to prevent RangeError
+    if (_currentIndex >= _questions.length || _questions.isEmpty) {
+      debugPrint('❌ Range error prevented: _currentIndex $_currentIndex >= ${_questions.length}');
+      return;
+    }
+
     final isCorrect = answerIndex == _questions[_currentIndex]['correct'];
     if (isCorrect) {
       setState(() => _score++);
@@ -331,22 +350,31 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
 
     // Next question or finish with smooth animations
     Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
+      if (mounted && _questions.isNotEmpty) {
+        // Safety check to prevent range errors
         if (_currentIndex < _questions.length - 1) {
           // Animate out current question
           _fadeController.reverse().then((_) {
             if (mounted) {
-              setState(() {
-                _currentIndex++;
-                _timeRemaining = _timeLimit;
-              });
+              // Double-check bounds before updating index
+              if (_currentIndex + 1 < _questions.length) {
+                setState(() {
+                  _currentIndex++;
+                  _timeRemaining = _timeLimit;
+                });
 
-              // Animate in new question
-              _slideController.reset();
-              _fadeController.forward();
-              _slideController.forward();
-              _progressController.forward();
-              _startTimer();
+                // Animate in new question
+                _slideController.reset();
+                _fadeController.forward();
+                _slideController.forward();
+                _progressController.forward();
+                _startTimer();
+              } else {
+                // Safety fallback - show results
+                setState(() => _showResults = true);
+                _fadeController.forward();
+                _pulseController.repeat(reverse: true);
+              }
             }
           });
         } else {
@@ -459,6 +487,16 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   }
 
   Widget _buildQuestionScreen() {
+    // Safety check to prevent RangeError
+    if (_currentIndex >= _questions.length || _questions.isEmpty) {
+      debugPrint('❌ Range error prevented in _buildQuestionScreen: _currentIndex $_currentIndex >= ${_questions.length}');
+      return const Scaffold(
+        body: Center(
+          child: Text('Error loading question. Please restart the game.'),
+        ),
+      );
+    }
+
     final question = _questions[_currentIndex];
     final options = question['options'] as List<String>;
 
@@ -493,25 +531,28 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                   opacity: _fadeAnimation,
                   child: SlideTransition(
                     position: _slideAnimation,
-                                    child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Enhanced Question Card
-                      Flexible(
-                        flex: 2,
-                        child: _buildEnhancedQuestionCard(question),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          // Enhanced Question Card
+                          Flexible(
+                            flex: 2,
+                            child: _buildEnhancedQuestionCard(question),
+                          ),
 
-                      // Enhanced Answer Options
-                      Flexible(
-                        flex: 3,
-                        child: _buildEnhancedAnswerOptions(options),
+                          // Enhanced Answer Options
+                          Flexible(
+                            flex: 3,
+                            child: _buildEnhancedAnswerOptions(options),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
                   ),
                 ),
               ),
@@ -773,7 +814,10 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                 onTap: () => _submitAnswer(index),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     gradient: LinearGradient(
@@ -878,7 +922,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 40),
-                  
+
                   // Animated Result Icon
                   ScaleTransition(
                     scale: _pulseAnimation,
@@ -1066,12 +1110,22 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   }
 
   void _playAgain() {
+    // Stop any running timers and reset animations
+    _timer?.cancel();
+    _fadeController.reset();
+    _slideController.reset();
+    _progressController.reset();
+    
     setState(() {
       _currentIndex = 0;
       _score = 0;
       _showResults = false;
       _timeRemaining = _timeLimit;
+      _questions.clear(); // Clear questions to prevent stale data
     });
+    
+    // Start fresh animations
+    _fadeController.forward();
     _loadGame();
   }
 
@@ -1177,9 +1231,13 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
       _hapticOn = prefs.hapticFeedbackEnabled;
     });
 
-    // Reload game if core parameters changed
+    // Reload game if core parameters changed (with range error protection)
     if (shouldReload && _questions.isNotEmpty) {
       debugPrint('🔄 Reloading game due to preference changes');
+      // Reset game state to prevent range errors
+      _currentIndex = 0;
+      _score = 0;
+      _timer?.cancel();
       _loadGame();
     }
   }
