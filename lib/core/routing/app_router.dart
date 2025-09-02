@@ -102,6 +102,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 _buildPage(state, const game.SimpleUnifiedQuiz()),
           ),
           GoRoute(
+            path: 'debug',
+            name: 'debug-preferences',
+            pageBuilder: (context, state) =>
+                _buildPage(state, const game.DebugPreferenceTest()),
+          ),
+          GoRoute(
             path: 'ai-native',
             name: 'ai-native-quiz',
             pageBuilder: (context, state) =>

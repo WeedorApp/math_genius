@@ -21,6 +21,7 @@ export 'widgets/enhanced_game_selection_screen.dart';
 export 'widgets/ai_native_game_screen.dart';
 export 'widgets/chatgpt_enhanced_game_screen.dart';
 export 'widgets/classic_quiz_screen.dart'; // Legacy
+export 'widgets/debug_preference_test.dart'; // Debug tool
 export 'widgets/game_design_cards.dart';
 export 'widgets/game_selection_screen.dart';
 export 'widgets/game_mode_selector.dart';

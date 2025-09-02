@@ -47,10 +47,44 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   @override
   void initState() {
     super.initState();
+    if (kDebugMode) {
+      debugPrint('✅ NEW SIMPLE UNIFIED QUIZ SCREEN BEING USED! (Correct)');
+      debugPrint('🎮 SIMPLE UNIFIED QUIZ INITIALIZING');
+    }
     initializePreferencesSync();
     initializeUnifiedPreferenceSync(); // Add comprehensive sync
     _loadUserGradeLevel(); // Load user's actual grade level
-    _loadGame();
+    _loadPreferencesAndGame(); // Load preferences first, then game
+  }
+
+  /// Load preferences first, then initialize game with correct settings
+  Future<void> _loadPreferencesAndGame() async {
+    try {
+      // Load current preferences first
+      final prefs = ref.read(currentUserGamePreferencesProvider);
+      if (prefs != null) {
+        debugPrint('🔄 Loading preferences before game initialization');
+        debugPrint('   Preference category: ${prefs.preferredCategory.name}');
+        debugPrint('   Preference difficulty: ${prefs.preferredDifficulty.name}');
+        
+        // Apply preferences immediately
+        setState(() {
+          _difficulty = prefs.preferredDifficulty;
+          _category = prefs.preferredCategory;
+          _questionCount = prefs.preferredQuestionCount;
+          _timeLimit = prefs.preferredTimeLimit;
+          _soundOn = prefs.soundEnabled;
+          _hapticOn = prefs.hapticFeedbackEnabled;
+        });
+      }
+      
+      // Now load the game with the correct preferences
+      await _loadGame();
+    } catch (e) {
+      debugPrint('❌ Error loading preferences and game: $e');
+      // Fallback to loading game with defaults
+      _loadGame();
+    }
   }
 
   /// Load the user's actual grade level from their profile

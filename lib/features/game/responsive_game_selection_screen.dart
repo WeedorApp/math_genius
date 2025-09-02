@@ -183,7 +183,7 @@ class ResponsiveGameSelectionScreen extends ConsumerWidget {
         'description': 'Traditional multiple choice questions',
         'icon': Icons.quiz,
         'color': colorScheme.primary,
-        'route': '/classic-quiz',
+        'route': '/game-selection/classic',
       },
       {
         'title': 'AI Native Quiz',

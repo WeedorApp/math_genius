@@ -79,6 +79,7 @@ class _ClassicQuizScreenState extends ConsumerState<ClassicQuizScreen>
   void initState() {
     super.initState();
     if (kDebugMode) {
+      debugPrint('🚨 OLD CLASSIC QUIZ SCREEN BEING USED! (Should use SimpleUnifiedQuiz)');
       debugPrint('🎮 CLASSIC QUIZ INITIALIZING');
       debugPrint('   📊 Initial Category: ${_selectedCategory.name}');
       debugPrint('   🎯 Initial Difficulty: ${_selectedDifficulty.name}');
