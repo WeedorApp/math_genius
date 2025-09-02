@@ -42,17 +42,11 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   DateTime? _questionStartTime;
   final Set<String> _categoriesPlayed = {};
 
-  // Advanced animation controllers
+  // Simplified animation controllers
   late AnimationController _slideController;
-  late AnimationController _bounceController;
-  late AnimationController _glowController;
-  late AnimationController _particleController;
   late AnimationController _pulseController;
   
   late Animation<Offset> _slideAnimation;
-  late Animation<double> _bounceAnimation;
-  late Animation<double> _glowAnimation;
-  // Removed unused _particleAnimation
   late Animation<double> _pulseAnimation;
 
   // Preferences
@@ -75,64 +69,29 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   void _initializeAnimations() {
-    // Slide animation for smooth transitions
+    // Simple slide animation for question transitions
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
 
-    // Bounce animation for interactive feedback
-    _bounceController = AnimationController(
+    // Pulse animation for timer warnings only
+    _pulseController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
 
-    // Glow animation for premium effects
-    _glowController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-
-    // Particle animation for celebrations
-    _particleController = AnimationController(
-      duration: const Duration(milliseconds: 3000),
-      vsync: this,
-    );
-
-    // Pulse animation for emphasis
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
+      begin: const Offset(0.3, 0.0),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
-      curve: Curves.elasticOut,
+      curve: Curves.easeOut,
     ));
 
-    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-
-    _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
-
-    // Removed unused _particleAnimation initialization
-
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.elasticInOut),
-    );
-
-    // Start initial animations with performance optimization
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _glowController.status != AnimationStatus.forward) {
-        _glowController.repeat(reverse: true);
-      }
-    });
   }
 
   Future<void> _loadUserGradeLevel() async {
@@ -208,7 +167,6 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
 
         _startTimer();
         _slideController.forward();
-        _bounceController.forward();
 
         // Play game start sound
         try {
@@ -276,18 +234,10 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
       _bestStreak = _currentStreak > _bestStreak ? _currentStreak : _bestStreak;
       _isOnFire = _currentStreak >= 5;
       
-      // Trigger celebration animations
-      if (_particleController.status != AnimationStatus.forward) {
-        _particleController.reset();
-        _particleController.forward();
-      }
-      if (_isOnFire && _glowController.status != AnimationStatus.forward) {
-        _glowController.repeat(reverse: true);
-      }
+      // Simple success feedback (no excessive animations)
     } else {
       _currentStreak = 0;
       _isOnFire = false;
-      _glowController.stop();
     }
 
     // Play sound effects
@@ -355,11 +305,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   void _showAchievement(String title, String message, Color color) {
     if (!mounted) return;
 
-    // Trigger celebration particle effect
-    if (_particleController.status != AnimationStatus.forward) {
-      _particleController.reset();
-      _particleController.forward();
-    }
+    // Simple achievement feedback
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -413,9 +359,6 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
             if (kDebugMode) {
               debugPrint('✅ Moved to question ${_currentIndex + 1}/${_questions.length}');
             }
-            if (_particleController.status == AnimationStatus.forward) {
-              _particleController.reset();
-            }
             _pulseController.stop();
             _pulseController.reset();
           } else {
@@ -426,7 +369,6 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
             }
 
             setState(() => _showResults = true);
-            _bounceController.repeat(reverse: true);
 
             // Play game complete sound
             try {
@@ -586,30 +528,25 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Animated loading icon with glow effect
-              AnimatedBuilder(
-                animation: _glowAnimation,
-                builder: (context, child) {
-                  return Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: _getCategoryColor(_category).withValues(alpha: 0.4 + (_glowAnimation.value * 0.3)),
-                          blurRadius: 30 + (_glowAnimation.value * 20),
-                          spreadRadius: 5 + (_glowAnimation.value * 10),
-                        ),
-                      ],
+              // Simple loading icon
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _getCategoryColor(_category).withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      spreadRadius: 5,
                     ),
-                    child: Icon(
-                      _getCategoryIcon(_category),
-                      size: 48,
-                      color: _getCategoryColor(_category),
-                    ),
-                  );
-                },
+                  ],
+                ),
+                child: Icon(
+                  _getCategoryIcon(_category),
+                  size: 48,
+                  color: _getCategoryColor(_category),
+                ),
               ),
               const SizedBox(height: 32),
               
@@ -626,24 +563,15 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
               
               const SizedBox(height: 24),
               
-              // Loading text with animation
-              AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _pulseAnimation.value,
-                    child: Text(
-                      'Preparing ${_category.name} questions...',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: _getCategoryColor(_category),
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  );
-                },
+              // Simple loading text
+              Text(
+                'Preparing ${_getCategoryDisplayName(_category)} questions...',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: _getCategoryColor(_category),
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
               ),
               
               const SizedBox(height: 12),
@@ -859,22 +787,17 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    AnimatedBuilder(
-                                      animation: _glowAnimation,
-                                      builder: (context, child) {
-                                        return Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.2 + (_glowAnimation.value * 0.1)),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Icon(
-                                            _getCategoryIcon(_category),
-                                            color: Colors.white,
-                                            size: 16,
-                                          ),
-                                        );
-                                      },
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Icon(
+                                        _getCategoryIcon(_category),
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
                                     ),
                                     const SizedBox(width: 6),
                                     Flexible(
@@ -910,7 +833,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
                         
                         // Premium timer with pulsing effect
                         AnimatedBuilder(
-                          animation: _timeRemaining <= 10 ? _pulseAnimation : _bounceAnimation,
+                          animation: _timeRemaining <= 10 ? _pulseAnimation : _pulseAnimation,
                           builder: (context, child) {
                             return Transform.scale(
                               scale: _timeRemaining <= 10 ? _pulseAnimation.value : 1.0,
@@ -960,17 +883,10 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(3),
-                      child: AnimatedBuilder(
-                        animation: _glowAnimation,
-                        builder: (context, child) {
-                          return LinearProgressIndicator(
-                            value: progress,
-                            backgroundColor: Colors.transparent,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white.withValues(alpha: 0.9 + (_glowAnimation.value * 0.1)),
-                            ),
-                          );
-                        },
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: Colors.transparent,
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     ),
                   ),
@@ -1046,53 +962,45 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   Widget _buildPremiumStatItem(IconData icon, String value, String label, Color color, bool animate) {
-    return AnimatedBuilder(
-      animation: animate ? _bounceAnimation : _pulseAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: animate ? _bounceAnimation.value : 1.0,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Icon(icon, color: color, size: 16),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      value,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
+                child: Icon(icon, color: color, size: 16),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                value,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -1100,12 +1008,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     final questionText = question['question'] as String? ?? 'Question not available';
     final hint = question['hint'] as String?;
     
-    return AnimatedBuilder(
-      animation: _bounceAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _bounceAnimation.value,
-          child: Container(
+    return Container(
             width: double.infinity,
             constraints: const BoxConstraints(
               minHeight: 120,
@@ -1144,38 +1047,33 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Enhanced category icon with glow (smaller)
-                  AnimatedBuilder(
-                    animation: _glowAnimation,
-                    builder: (context, child) {
-                      return Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              _getCategoryColor(_category).withValues(alpha: 0.15),
-                              _getCategoryColor(_category).withValues(alpha: 0.25),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: _getCategoryColor(_category).withValues(alpha: 0.3 + (_glowAnimation.value * 0.2)),
-                              blurRadius: 12 + (_glowAnimation.value * 8),
-                              spreadRadius: 1,
-                            ),
-                          ],
+                  // Simple category icon
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          _getCategoryColor(_category).withValues(alpha: 0.15),
+                          _getCategoryColor(_category).withValues(alpha: 0.25),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _getCategoryColor(_category).withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          spreadRadius: 1,
                         ),
-                        child: Icon(
-                          _getCategoryIcon(_category),
-                          size: 28,
-                          color: _getCategoryColor(_category),
-                        ),
-                      );
-                    },
+                      ],
+                    ),
+                    child: Icon(
+                      _getCategoryIcon(_category),
+                      size: 28,
+                      color: _getCategoryColor(_category),
+                    ),
                   ),
                   
                   const SizedBox(height: 16),
@@ -1238,10 +1136,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
                 ],
               ),
             ),
-          ),
-        );
-      },
-    );
+          );
   }
 
   Widget _buildRevolutionaryAnswerGrid(List<String> options, bool isTablet) {
@@ -1286,15 +1181,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
           return const SizedBox.shrink();
         }
         
-        return AnimatedBuilder(
-          animation: _bounceAnimation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _bounceAnimation.value,
-              child: _buildRevolutionaryAnswerButton(validOptions[index], index),
-            );
-          },
-        );
+        return _buildRevolutionaryAnswerButton(validOptions[index], index);
       },
     );
   }
@@ -1316,91 +1203,69 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     final colorGradient = colors[safeIndex];
     
     return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: colorGradient[0].withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-            spreadRadius: 1,
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: colorGradient[0].withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _submitAnswer(index),
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: colorGradient,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  // Premium letter badge
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        String.fromCharCode(65 + index), // A, B, C, D
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 16),
-                  
-                  // Enhanced option text
-                  Expanded(
-                    child: Text(
-                      option,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  
-                  // Subtle arrow indicator
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: Colors.white.withValues(alpha: 0.7),
-                    size: 16,
-                  ),
-                ],
-              ),
-            ),
+      child: ElevatedButton(
+        onPressed: () {
+          if (kDebugMode) debugPrint('🎯 Answer button $index tapped');
+          _submitAnswer(index);
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorGradient[0],
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
+        ),
+        child: Row(
+          children: [
+            // Simple letter badge
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  String.fromCharCode(65 + index), // A, B, C, D
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(width: 12),
+            
+            // Option text
+            Expanded(
+              child: Text(
+                option,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1434,81 +1299,66 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
               children: [
                 const SizedBox(height: 40),
                 
-                // Premium result header
-                AnimatedBuilder(
-                  animation: _bounceAnimation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: _bounceAnimation.value,
-                      child: Container(
-                        padding: const EdgeInsets.all(32),
+                // Simple result header
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.white, Colors.grey.shade50],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: resultColor.withValues(alpha: 0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Colors.white, Colors.grey.shade50],
+                            colors: [resultColor, Color.lerp(resultColor, Colors.black, 0.2)!],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(24),
+                          shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: resultColor.withValues(alpha: 0.2),
-                              blurRadius: 30,
-                              offset: const Offset(0, 12),
-                              spreadRadius: 4,
-                            ),
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
+                              color: resultColor.withValues(alpha: 0.4),
+                              blurRadius: 15,
+                              spreadRadius: 2,
                             ),
                           ],
                         ),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                                              gradient: LinearGradient(
-                                colors: [resultColor, Color.lerp(resultColor, Colors.black, 0.2)!],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: resultColor.withValues(alpha: 0.4),
-                                    blurRadius: 20,
-                                    spreadRadius: 4,
-                                  ),
-                                ],
-                              ),
-                              child: Icon(resultIcon, color: Colors.white, size: 40),
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              resultMessage,
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: resultColor,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${accuracy.round()}% Accuracy',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                        child: Icon(resultIcon, color: Colors.white, size: 40),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        resultMessage,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: resultColor,
                         ),
                       ),
-                    );
-                  },
+                      const SizedBox(height: 8),
+                      Text(
+                        '${accuracy.round()}% Accuracy',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 
                 const SizedBox(height: 40),
@@ -1815,24 +1665,10 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
       // Cancel timer first
       _timer?.cancel();
       
-      // Safely reset all animations
-      if (_slideController.status != AnimationStatus.dismissed) {
-        _slideController.reset();
-      }
-      if (_bounceController.status != AnimationStatus.dismissed) {
-        _bounceController.reset();
-      }
-      if (_glowController.status != AnimationStatus.dismissed) {
-        _glowController.stop();
-        _glowController.reset();
-      }
-      if (_particleController.status != AnimationStatus.dismissed) {
-        _particleController.reset();
-      }
-      if (_pulseController.status != AnimationStatus.dismissed) {
-        _pulseController.stop();
-        _pulseController.reset();
-      }
+      // Reset simplified animations
+      _slideController.reset();
+      _pulseController.stop();
+      _pulseController.reset();
 
       setState(() {
         _currentIndex = 0;
@@ -1850,7 +1686,6 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
       if (kDebugMode) {
         debugPrint('❌ Error in _playAgain: $e');
       }
-      // Fallback - just reload the game
       _loadGame();
     }
   }
@@ -1960,18 +1795,11 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     // Cancel timer first
     _timer?.cancel();
     
-    // Stop all animations before disposing
+    // Stop and dispose simplified animation controllers
     _slideController.stop();
-    _bounceController.stop();
-    _glowController.stop();
-    _particleController.stop();
-    _pulseController.stop();
-    
-    // Dispose animation controllers
     _slideController.dispose();
-    _bounceController.dispose();
-    _glowController.dispose();
-    _particleController.dispose();
+    
+    _pulseController.stop();
     _pulseController.dispose();
     
     super.dispose();
@@ -2026,20 +1854,17 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     return true;
   }
 
-  /// Performance monitoring for animations (throttled)
+  /// Performance monitoring for animations (simplified)
   void _monitorAnimationPerformance() {
     if (kDebugMode) {
       final activeAnimations = [
         if (_slideController.isAnimating) 'slide',
-        if (_bounceController.isAnimating) 'bounce', 
-        if (_glowController.isAnimating) 'glow',
-        if (_particleController.isAnimating) 'particle',
         if (_pulseController.isAnimating) 'pulse',
       ];
       
-      // Only log when animations change or on first question
+      // Only log when animations are active
       if (activeAnimations.isNotEmpty && _currentIndex == 0) {
-        debugPrint('🎭 Animation system active: ${activeAnimations.join(', ')}');
+        debugPrint('🎭 Active animations: ${activeAnimations.join(', ')}');
       }
     }
   }
