@@ -847,49 +847,58 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
                         
                         const SizedBox(width: 16),
                         
-                        // Enhanced title section
+                        // Enhanced title section (overflow-safe)
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  AnimatedBuilder(
-                                    animation: _glowAnimation,
-                                    builder: (context, child) {
-                                      return Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.2 + (_glowAnimation.value * 0.1)),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(
-                                          _getCategoryIcon(_category),
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _category.name.toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.2,
+                              // Compact title row
+                              Flexible(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    AnimatedBuilder(
+                                      animation: _glowAnimation,
+                                      builder: (context, child) {
+                                        return Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(alpha: 0.2 + (_glowAnimation.value * 0.1)),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Icon(
+                                            _getCategoryIcon(_category),
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
+                                        );
+                                      },
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        _getCategoryDisplayName(_category),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 2),
                               Text(
-                                'Question ${_currentIndex + 1} of ${_questions.length}',
+                                'Q${_currentIndex + 1}/${_questions.length}',
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.9),
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1846,7 +1855,40 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     }
   }
 
-  // Helper methods for category colors and icons
+  // Helper methods for category colors, icons, and display names
+  String _getCategoryDisplayName(GameCategory category) {
+    switch (category) {
+      case GameCategory.addition:
+        return 'Addition';
+      case GameCategory.subtraction:
+        return 'Subtraction';
+      case GameCategory.multiplication:
+        return 'Multiply';
+      case GameCategory.division:
+        return 'Division';
+      case GameCategory.fractions:
+        return 'Fractions';
+      case GameCategory.percentages:
+        return 'Percentages';
+      case GameCategory.algebra:
+        return 'Algebra';
+      case GameCategory.geometry:
+        return 'Geometry';
+      case GameCategory.calculus:
+        return 'Calculus';
+      case GameCategory.decimals:
+        return 'Decimals';
+      case GameCategory.wordProblems:
+        return 'Word Problems';
+      case GameCategory.patterns:
+        return 'Patterns';
+      case GameCategory.measurement:
+        return 'Measurement';
+      case GameCategory.dataAnalysis:
+        return 'Data Analysis';
+    }
+  }
+
   Color _getCategoryColor(GameCategory category) {
     switch (category) {
       case GameCategory.addition:
@@ -1865,8 +1907,18 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
         return const Color(0xFF6366F1);
       case GameCategory.geometry:
         return const Color(0xFFF97316);
-      default:
-        return const Color(0xFF6B7280);
+      case GameCategory.calculus:
+        return const Color(0xFF8B5CF6);
+      case GameCategory.decimals:
+        return const Color(0xFFEC4899);
+      case GameCategory.wordProblems:
+        return const Color(0xFF14B8A6);
+      case GameCategory.patterns:
+        return const Color(0xFFF59E0B);
+      case GameCategory.measurement:
+        return const Color(0xFF84CC16);
+      case GameCategory.dataAnalysis:
+        return const Color(0xFF6366F1);
     }
   }
 
@@ -1888,8 +1940,18 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
         return Icons.functions_rounded;
       case GameCategory.geometry:
         return Icons.category_rounded;
-      default:
-        return Icons.calculate_rounded;
+      case GameCategory.calculus:
+        return Icons.functions_rounded;
+      case GameCategory.decimals:
+        return Icons.money_rounded;
+      case GameCategory.wordProblems:
+        return Icons.article_rounded;
+      case GameCategory.patterns:
+        return Icons.pattern_rounded;
+      case GameCategory.measurement:
+        return Icons.straighten_rounded;
+      case GameCategory.dataAnalysis:
+        return Icons.analytics_rounded;
     }
   }
 
