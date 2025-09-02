@@ -30,6 +30,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   int _score = 0;
   bool _isLoading = false;
   bool _showResults = false;
+  bool _answerSubmitted = false;  // Prevent double submissions
   Timer? _timer;
   int _timeRemaining = 30;
 
@@ -160,6 +161,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
           _currentStreak = 0;
           _isOnFire = false;
           _answerHistory.clear();
+          _answerSubmitted = false;  // Reset for new game
           _timeRemaining = _timeLimit;
           _questionStartTime = DateTime.now();
           _isLoading = false;
@@ -212,13 +214,38 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   void _submitAnswer(int selectedIndex) {
-    if (_currentIndex >= _questions.length || _questions.isEmpty) return;
+    if (kDebugMode) {
+      debugPrint('🔍 _submitAnswer called with index: $selectedIndex');
+      debugPrint('🔍 Answer submitted flag: $_answerSubmitted');
+    }
+
+    // Prevent double submissions
+    if (_answerSubmitted) {
+      if (kDebugMode) debugPrint('❌ Answer already submitted for this question');
+      return;
+    }
+
+    if (_currentIndex >= _questions.length || _questions.isEmpty) {
+      if (kDebugMode) debugPrint('❌ Cannot submit - invalid state');
+      return;
+    }
 
     final question = _questions[_currentIndex];
     final correctIndex = question['correctIndex'] as int?;
-    if (correctIndex == null) return;
+    if (correctIndex == null) {
+      if (kDebugMode) debugPrint('❌ Cannot submit - no correct index');
+      return;
+    }
+    
+    // Mark answer as submitted
+    _answerSubmitted = true;
     
     final isCorrect = selectedIndex == correctIndex;
+    
+    if (kDebugMode) {
+      debugPrint('✅ Answer submitted: ${isCorrect ? 'CORRECT' : 'INCORRECT'}');
+      debugPrint('🎯 Selected: $selectedIndex, Correct: $correctIndex');
+    }
 
     // Calculate response time
     final responseTime = _questionStartTime != null
@@ -352,6 +379,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
             _currentIndex++;
             _timeRemaining = _timeLimit;
             _questionStartTime = DateTime.now();
+            _answerSubmitted = false;  // Reset for new question
             _slideController.reset();
             _slideController.forward();
             
@@ -1215,12 +1243,22 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
         ],
       ),
       child: ElevatedButton(
-        onPressed: () {
-          if (kDebugMode) debugPrint('🎯 Answer button $index tapped');
+        onPressed: _answerSubmitted ? null : () {
+          if (kDebugMode) {
+            debugPrint('🎯 Answer button $index tapped - Option: $option');
+            debugPrint('🎯 Current question index: $_currentIndex');
+            debugPrint('🎯 Total questions: ${_questions.length}');
+          }
+          
+          // Immediate haptic feedback to confirm click
+          if (_hapticOn) {
+            HapticFeedback.selectionClick();
+          }
+          
           _submitAnswer(index);
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: colorGradient[0],
+          backgroundColor: _answerSubmitted ? Colors.grey : colorGradient[0],
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1678,6 +1716,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
         _bestStreak = 0;
         _isOnFire = false;
         _answerHistory.clear();
+        _answerSubmitted = false;  // Reset for new game
         _averageResponseTime = 0.0;
       });
 
