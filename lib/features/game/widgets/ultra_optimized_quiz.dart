@@ -522,31 +522,27 @@ class _UltraOptimizedQuizState extends ConsumerState<UltraOptimizedQuiz>
                   position: _slideAnimation,
                   child: Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 32 : 16,
-                      vertical: 8,
+                      horizontal: isTablet ? 24 : 16,
+                      vertical: 4,
                     ),
                     child: Column(
                       children: [
                         // Compact stats row
                         _buildCompactStats(),
                         
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                         
                         // Question section (optimized)
-                        Expanded(
-                          flex: 2,
-                          child: _buildUltraQuestionCard(question),
-                        ),
+                        _buildUltraQuestionCard(question),
                         
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         
                         // Answer options (optimized)
                         Expanded(
-                          flex: 3,
                           child: _buildUltraAnswerGrid(options, isTablet),
                         ),
                         
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
                       ],
                     ),
                   ),
@@ -794,61 +790,63 @@ class _UltraOptimizedQuizState extends ConsumerState<UltraOptimizedQuiz>
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Category icon
+            // Category icon (smaller)
             Container(
-              width: 50,
-              height: 50,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: _getCategoryColor(_category).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 _getCategoryIcon(_category),
-                size: 28,
+                size: 24,
                 color: _getCategoryColor(_category),
               ),
             ),
             
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             
             // Question text
-            Flexible(
-              child: Text(
-                question['question'],
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
-                  height: 1.3,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+            Text(
+              question['question'],
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2D3748),
+                height: 1.2,
               ),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
             
             // Hint button if available
             if (question['hint'] != null && question['hint'].toString().isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               TextButton.icon(
                 onPressed: () => _showHint(question['hint']),
                 icon: Icon(
                   Icons.lightbulb_outline,
-                  size: 16,
+                  size: 14,
                   color: _getCategoryColor(_category),
                 ),
                 label: Text(
                   'Hint',
-                  style: TextStyle(color: _getCategoryColor(_category)),
+                  style: TextStyle(
+                    color: _getCategoryColor(_category),
+                    fontSize: 12,
+                  ),
                 ),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: const Size(60, 28),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                     side: BorderSide(
                       color: _getCategoryColor(_category).withValues(alpha: 0.3),
                     ),
@@ -868,9 +866,9 @@ class _UltraOptimizedQuizState extends ConsumerState<UltraOptimizedQuiz>
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: isTablet ? 2 : 1,
-        childAspectRatio: isTablet ? 4.5 : 5.5,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        childAspectRatio: isTablet ? 5.0 : 6.0,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
       ),
       itemCount: options.length,
       itemBuilder: (context, index) {
@@ -909,7 +907,7 @@ class _UltraOptimizedQuizState extends ConsumerState<UltraOptimizedQuiz>
           backgroundColor: color,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -918,11 +916,11 @@ class _UltraOptimizedQuizState extends ConsumerState<UltraOptimizedQuiz>
           children: [
             // Letter badge
             Container(
-              width: 32,
-              height: 32,
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Center(
                 child: Text(
@@ -930,20 +928,20 @@ class _UltraOptimizedQuizState extends ConsumerState<UltraOptimizedQuiz>
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 14,
                   ),
                 ),
               ),
             ),
             
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             
             // Option text
             Expanded(
               child: Text(
                 option,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
                 maxLines: 2,
