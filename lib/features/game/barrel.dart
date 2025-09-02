@@ -5,6 +5,9 @@ export 'models/ai_difficulty_model.dart';
 export 'models/game_model.dart';
 export 'models/enhanced_game_model.dart';
 
+// Mixins
+export 'mixins/unified_preference_sync_mixin.dart';
+
 // Services
 export 'services/ai_native_game_service.dart';
 export 'services/game_service.dart';

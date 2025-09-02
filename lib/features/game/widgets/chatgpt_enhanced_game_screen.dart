@@ -656,6 +656,27 @@ class _ChatGPTEnhancedGameScreenState
 
   @override
   Widget build(BuildContext context) {
+    // CRITICAL: Real-time preference synchronization
+    ref.listen<UserGamePreferences?>(
+      currentUserGamePreferencesProvider,
+      (previous, next) {
+        if (next != null && mounted) {
+          // Update ChatGPT game preferences immediately
+          setState(() {
+            _selectedDifficulty = _mapGameDifficultyToAI(next.preferredDifficulty);
+            _selectedTopic = next.preferredCategory;
+            _selectedQuestionCount = next.preferredQuestionCount;
+            _selectedTimeLimit = next.preferredTimeLimit;
+          });
+          
+          // Reload user preferences to refresh game
+          if (_questions != null && _questions!.isNotEmpty) {
+            _loadUserPreferences();
+          }
+        }
+      },
+    );
+
     final themeData = ref.watch(themeDataProvider);
     final colorScheme = themeData.colorScheme.toColorScheme();
 

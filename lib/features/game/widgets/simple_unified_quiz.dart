@@ -10,6 +10,7 @@ import '../../../core/barrel.dart';
 // Game imports  
 import '../models/game_model.dart';
 import '../mixins/game_preferences_mixin.dart';
+import '../mixins/unified_preference_sync_mixin.dart';
 import '../services/game_service.dart';
 
 /// Simple Unified Quiz Screen
@@ -22,7 +23,7 @@ class SimpleUnifiedQuiz extends ConsumerStatefulWidget {
 }
 
 class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz> 
-    with GamePreferencesMixin<SimpleUnifiedQuiz> {
+    with GamePreferencesMixin<SimpleUnifiedQuiz>, UnifiedPreferenceSyncMixin<SimpleUnifiedQuiz> {
   
   // Game state
   List<Map<String, dynamic>> _questions = [];
@@ -45,6 +46,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   void initState() {
     super.initState();
     initializePreferencesSync();
+    initializeUnifiedPreferenceSync(); // Add comprehensive sync
     _loadGame();
   }
 
@@ -200,19 +202,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
 
   @override
   Widget build(BuildContext context) {
-    // Real-time preference sync
-    final prefs = ref.watch(currentUserGamePreferencesProvider);
-    if (prefs != null && mounted) {
-      // Update preferences if changed
-      if (_difficulty != prefs.preferredDifficulty ||
-          _category != prefs.preferredCategory ||
-          _questionCount != prefs.preferredQuestionCount ||
-          _timeLimit != prefs.preferredTimeLimit) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) onPreferencesLoaded(prefs);
-        });
-      }
-    }
+    // Preference synchronization is now handled by UnifiedPreferenceSyncMixin
 
     if (_isLoading) {
       return const Scaffold(
@@ -398,5 +388,73 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   Color _getOptionColor(int index) {
     final colors = [Colors.blue, Colors.green, Colors.orange, Colors.red];
     return colors[index % colors.length];
+  }
+
+  // UnifiedPreferenceSyncMixin implementations
+  @override
+  void applyGamePreferences(UserGamePreferences prefs) {
+    final shouldReload = _difficulty != prefs.preferredDifficulty ||
+                        _category != prefs.preferredCategory ||
+                        _questionCount != prefs.preferredQuestionCount ||
+                        _timeLimit != prefs.preferredTimeLimit;
+
+    setState(() {
+      _difficulty = prefs.preferredDifficulty;
+      _category = prefs.preferredCategory;
+      _questionCount = prefs.preferredQuestionCount;
+      _timeLimit = prefs.preferredTimeLimit;
+      _soundOn = prefs.soundEnabled;
+      _hapticOn = prefs.hapticFeedbackEnabled;
+    });
+
+    // Reload game if core parameters changed
+    if (shouldReload && _questions.isNotEmpty) {
+      _loadGame();
+    }
+  }
+
+  @override
+  void applyLearningPreferences(UserGamePreferences prefs) {
+    // Apply advanced learning preferences if available
+    // For SimpleUnifiedQuiz, we use basic implementation
+  }
+
+  @override
+  void applyAIPreferences(UserGamePreferences prefs) {
+    // AI preferences don't apply to SimpleUnifiedQuiz
+    // This method is required by the mixin but can be empty
+  }
+
+  @override
+  void applyAccessibilityPreferences(UserGamePreferences prefs) {
+    // Accessibility preferences are handled at the app level
+    // This method is required by the mixin but can be empty for games
+  }
+
+  @override
+  void applyUIPreferences(UserGamePreferences prefs) {
+    // UI preferences like theme are handled at the app level
+    // This method is required by the mixin but can be empty for games
+  }
+
+  @override
+  void showSyncFeedback(UserGamePreferences prefs) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.sync, color: Colors.white, size: 16),
+              const SizedBox(width: 8),
+              Text('Settings synced: ${prefs.preferredCategory.name} - ${prefs.preferredDifficulty.name}'),
+            ],
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    }
   }
 }
