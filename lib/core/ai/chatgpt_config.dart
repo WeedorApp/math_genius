@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../providers/global_providers.dart';
 
 /// ChatGPT Configuration Management
 /// Handles API keys, settings, and configuration for ChatGPT integration
@@ -157,14 +158,11 @@ class ChatGPTConfig {
 }
 
 /// Riverpod providers for ChatGPT configuration
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError(
-    'SharedPreferences should be initialized in main.dart',
-  );
-});
+// Using global sharedPreferencesProvider from core/providers/global_providers.dart
 
 final chatGPTConfigProvider = Provider<ChatGPTConfig>((ref) {
-  return ChatGPTConfig(ref.read(sharedPreferencesProvider));
+  final prefs = ref.read(sharedPreferencesProvider);
+  return ChatGPTConfig(prefs);
 });
 
 final chatGPTStatusProvider = Provider<Map<String, dynamic>>((ref) {

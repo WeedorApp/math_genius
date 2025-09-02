@@ -179,7 +179,8 @@ class AdaptiveGameIntegration {
           estimatedHelpfulness: 0.8,
           createdAt: DateTime.now(),
         ),
-        personalizedContent: 'Here\'s a hint: ${question.hint ?? 'Break this down into smaller steps'}',
+        personalizedContent:
+            'Here\'s a hint: ${question.hint ?? 'Break this down into smaller steps'}',
         createdAt: DateTime.now(),
       );
 

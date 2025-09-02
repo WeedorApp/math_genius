@@ -19,7 +19,6 @@ import 'features/user_management/services/class_management_service.dart'
     as class_mgmt;
 import 'features/game/services/ai_native_game_service.dart' as ai_game;
 import 'features/student/services/student_analytics_service.dart';
-import 'core/ai/chatgpt_config.dart' as chatgpt;
 import 'core/ai/chatgpt_service.dart';
 import 'package:http/http.dart' as http;
 
@@ -88,6 +87,7 @@ void main() async {
         overrides: [
           themeServiceProvider.overrideWithValue(ThemeService(prefs)),
           sharedPreferencesProvider.overrideWithValue(prefs),
+          hiveBoxProvider.overrideWithValue(hiveBox),
           aiTutorServiceProvider.overrideWithValue(
             AITutorService(prefs, hiveBox),
           ),
@@ -114,13 +114,11 @@ void main() async {
               ChatGPTService(
                 '', // API key will be loaded from config
                 http.Client(),
-                chatgpt.ChatGPTConfig(prefs),
+                ChatGPTConfig(prefs),
               ),
             ),
           ),
-          chatgpt.chatGPTConfigProvider.overrideWithValue(
-            chatgpt.ChatGPTConfig(prefs),
-          ),
+          // ChatGPT config will be initialized automatically through its provider
           studentAnalyticsServiceProvider.overrideWithValue(
             StudentAnalyticsService(prefs, hiveBox),
           ),
@@ -242,3 +240,4 @@ class MathGeniusApp extends ConsumerWidget {
     }
   }
 }
+

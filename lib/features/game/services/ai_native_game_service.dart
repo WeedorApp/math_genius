@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'dart:convert';
+import '../../../core/providers/global_providers.dart';
 
 // Models
 import '../models/game_model.dart';
@@ -489,14 +490,10 @@ class AINativeGameService {
 
 /// Riverpod provider for AI Native Game Service
 final aiNativeGameServiceProvider = Provider<AINativeGameService>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  final chatGPTService = ref.watch(chatGPTServiceProvider);
+  final prefs = ref.read(sharedPreferencesProvider);
+  final chatGPTService = ref.read(chatGPTServiceProvider);
   return AINativeGameService(prefs, chatGPTService);
 });
 
 /// SharedPreferences provider
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError(
-    'SharedPreferences should be initialized in main.dart',
-  );
-});
+// Using global sharedPreferencesProvider from core/providers/global_providers.dart

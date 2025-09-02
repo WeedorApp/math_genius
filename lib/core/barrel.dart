@@ -45,6 +45,15 @@ export 'routing/barrel.dart';
 export 'preferences/barrel.dart';
 export 'preferences/global_preferences_listener.dart';
 
+// Global Providers
+export 'providers/barrel.dart';
+
+// Error Handling
+export 'error_handling/barrel.dart';
+
+// Performance Tracking
+export 'performance/barrel.dart';
+
 // Accessibility
 export 'accessibility/barrel.dart';
 

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../../../core/providers/global_providers.dart';
 
 // Models
 import '../models/class_model.dart';
@@ -479,14 +480,11 @@ class ClassManagementService {
 }
 
 /// Riverpod providers for class management
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError(
-    'SharedPreferences should be initialized in main.dart',
-  );
-});
+// Using global sharedPreferencesProvider from core/providers/global_providers.dart
 
 final classManagementServiceProvider = Provider<ClassManagementService>((ref) {
-  return ClassManagementService(ref.read(sharedPreferencesProvider));
+  final prefs = ref.read(sharedPreferencesProvider);
+  return ClassManagementService(prefs);
 });
 
 final userClassAccessProvider =
