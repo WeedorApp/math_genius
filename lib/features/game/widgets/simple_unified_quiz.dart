@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-// Removed unused import
+import 'package:flutter/foundation.dart';
 
 // Core imports
 import '../../../core/barrel.dart';
 
-// Game imports  
+// Game imports
 import '../models/game_model.dart';
 import '../mixins/game_preferences_mixin.dart';
 import '../mixins/unified_preference_sync_mixin.dart';
@@ -23,9 +23,10 @@ class SimpleUnifiedQuiz extends ConsumerStatefulWidget {
   ConsumerState<SimpleUnifiedQuiz> createState() => _SimpleUnifiedQuizState();
 }
 
-class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz> 
-    with GamePreferencesMixin<SimpleUnifiedQuiz>, UnifiedPreferenceSyncMixin<SimpleUnifiedQuiz> {
-  
+class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
+    with
+        GamePreferencesMixin<SimpleUnifiedQuiz>,
+        UnifiedPreferenceSyncMixin<SimpleUnifiedQuiz> {
   // Game state
   List<Map<String, dynamic>> _questions = [];
   int _currentIndex = 0;
@@ -42,7 +43,8 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   int _timeLimit = 30;
   bool _soundOn = true;
   bool _hapticOn = true;
-  GradeLevel _userGradeLevel = GradeLevel.grade5; // Default, will be loaded from user
+  GradeLevel _userGradeLevel =
+      GradeLevel.grade5; // Default, will be loaded from user
 
   @override
   void initState() {
@@ -65,8 +67,10 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
       if (prefs != null) {
         debugPrint('🔄 Loading preferences before game initialization');
         debugPrint('   Preference category: ${prefs.preferredCategory.name}');
-        debugPrint('   Preference difficulty: ${prefs.preferredDifficulty.name}');
-        
+        debugPrint(
+          '   Preference difficulty: ${prefs.preferredDifficulty.name}',
+        );
+
         // Apply preferences immediately
         setState(() {
           _difficulty = prefs.preferredDifficulty;
@@ -77,7 +81,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
           _hapticOn = prefs.hapticFeedbackEnabled;
         });
       }
-      
+
       // Now load the game with the correct preferences
       await _loadGame();
     } catch (e) {
@@ -92,14 +96,16 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
     try {
       final userService = ref.read(userManagementServiceProvider);
       final currentUser = await userService.getCurrentUser();
-      
+
       if (currentUser?.gradeLevel != null) {
         setState(() {
           _userGradeLevel = currentUser!.gradeLevel!;
         });
         debugPrint('👤 Loaded user grade level: ${_userGradeLevel.name}');
       } else {
-        debugPrint('⚠️ User has no grade level set, using default: ${_userGradeLevel.name}');
+        debugPrint(
+          '⚠️ User has no grade level set, using default: ${_userGradeLevel.name}',
+        );
       }
     } catch (e) {
       debugPrint('❌ Error loading user grade level: $e');
@@ -177,48 +183,57 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
 
   Future<void> _loadGame() async {
     setState(() => _isLoading = true);
-    
+
     try {
       // Debug: Print what category we're requesting
       debugPrint('🎯 Loading game with category: ${_category.name}');
       debugPrint('🎯 Difficulty: ${_difficulty.name}');
       debugPrint('🎯 Question count: $_questionCount');
-      
+
       final gameService = ref.read(gameServiceProvider);
       final aiQuestions = await gameService.generateAIQuestions(
         gradeLevel: _userGradeLevel, // Use actual user grade level!
         category: _category,
         difficulty: _difficulty,
         count: _questionCount,
-        forceRefresh: true, // Always get fresh questions to reflect preference changes
+        forceRefresh:
+            true, // Always get fresh questions to reflect preference changes
       );
 
       setState(() {
-        _questions = aiQuestions.map((q) => {
-          'question': q.question,
-          'options': q.options,
-          'correct': q.correctAnswer,
-          'category': q.category.name, // Store category for verification
-        }).toList();
+        _questions = aiQuestions
+            .map(
+              (q) => {
+                'question': q.question,
+                'options': q.options,
+                'correct': q.correctAnswer,
+                'category': q.category.name, // Store category for verification
+              },
+            )
+            .toList();
         _currentIndex = 0;
         _score = 0;
         _timeRemaining = _timeLimit;
         _isLoading = false;
       });
-      
+
       // Debug: Verify questions match requested category AND grade
-      debugPrint('✅ Generated ${aiQuestions.length} questions for ${_category.name} (${_userGradeLevel.name})');
+      debugPrint(
+        '✅ Generated ${aiQuestions.length} questions for ${_category.name} (${_userGradeLevel.name})',
+      );
       for (int i = 0; i < aiQuestions.length && i < 3; i++) {
-        debugPrint('   Q${i+1}: ${aiQuestions[i].category.name} (${aiQuestions[i].gradeLevel.name}) - ${aiQuestions[i].question.substring(0, 50)}...');
+        debugPrint(
+          '   Q${i + 1}: ${aiQuestions[i].category.name} (${aiQuestions[i].gradeLevel.name}) - ${aiQuestions[i].question.substring(0, 50)}...',
+        );
       }
-      
+
       _startTimer();
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading game: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading game: $e')));
       }
     }
   }
@@ -237,7 +252,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
 
   void _submitAnswer(int answerIndex) {
     _timer?.cancel();
-    
+
     final isCorrect = answerIndex == _questions[_currentIndex]['correct'];
     if (isCorrect) {
       setState(() => _score++);
@@ -272,69 +287,55 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
 
   @override
   Widget build(BuildContext context) {
-    // CRITICAL: Setup real-time preference listening
-    ref.listen<UserGamePreferences?>(
-      currentUserGamePreferencesProvider,
-      (previous, next) {
-        if (next != null && mounted) {
-          debugPrint('🔄 Preferences changed in SimpleUnifiedQuiz');
-          debugPrint('   Old category: ${_category.name}');
-          debugPrint('   New category: ${next.preferredCategory.name}');
-          
-          final categoryChanged = _category != next.preferredCategory;
-          final shouldReload = _difficulty != next.preferredDifficulty ||
-                              categoryChanged ||
-                              _questionCount != next.preferredQuestionCount ||
-                              _timeLimit != next.preferredTimeLimit;
+    // Watch preferences and trigger updates
+    final currentPrefs = ref.watch(currentUserGamePreferencesProvider);
 
-          // Clear cache if category changed
-          if (categoryChanged) {
-            final gameService = ref.read(gameServiceProvider);
-            gameService.clearCachedQuestionsForCategory(_category);
-            gameService.clearCachedQuestionsForCategory(next.preferredCategory);
-            debugPrint('🗑️ Cleared cache for category change');
-          }
+    // Check if preferences have changed and update accordingly
+    if (currentPrefs != null && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final categoryChanged = _category != currentPrefs.preferredCategory;
+          final shouldReload =
+              _difficulty != currentPrefs.preferredDifficulty ||
+              categoryChanged ||
+              _questionCount != currentPrefs.preferredQuestionCount ||
+              _timeLimit != currentPrefs.preferredTimeLimit;
 
-          setState(() {
-            _difficulty = next.preferredDifficulty;
-            _category = next.preferredCategory;
-            _questionCount = next.preferredQuestionCount;
-            _timeLimit = next.preferredTimeLimit;
-            _soundOn = next.soundEnabled;
-            _hapticOn = next.hapticFeedbackEnabled;
-          });
-
-          // CRITICAL: Reload game immediately if parameters changed
-          if (shouldReload && _questions.isNotEmpty) {
-            debugPrint('🔄 Reloading game with new preferences');
-            _loadGame();
-          }
-
-          // Show sync feedback
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.sync, color: Colors.white, size: 16),
-                    const SizedBox(width: 8),
-                    Text('Switched to ${next.preferredCategory.name}!'),
-                  ],
-                ),
-                duration: const Duration(seconds: 2),
-                backgroundColor: Colors.green,
-                behavior: SnackBarBehavior.floating,
-              ),
+          if (shouldReload) {
+            debugPrint('🔄 Preferences changed - updating game');
+            debugPrint(
+              '   New category: ${currentPrefs.preferredCategory.name}',
             );
+
+            // Clear cache if category changed
+            if (categoryChanged) {
+              final gameService = ref.read(gameServiceProvider);
+              gameService.clearCachedQuestionsForCategory(_category);
+              gameService.clearCachedQuestionsForCategory(
+                currentPrefs.preferredCategory,
+              );
+            }
+
+            setState(() {
+              _difficulty = currentPrefs.preferredDifficulty;
+              _category = currentPrefs.preferredCategory;
+              _questionCount = currentPrefs.preferredQuestionCount;
+              _timeLimit = currentPrefs.preferredTimeLimit;
+              _soundOn = currentPrefs.soundEnabled;
+              _hapticOn = currentPrefs.hapticFeedbackEnabled;
+            });
+
+            // Reload game with new preferences
+            if (_questions.isNotEmpty) {
+              _loadGame();
+            }
           }
         }
-      },
-    );
+      });
+    }
 
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_showResults) {
@@ -344,9 +345,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
     if (_questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Math Quiz')),
-        body: const Center(
-          child: Text('Loading questions...'),
-        ),
+        body: const Center(child: Text('Loading questions...')),
       );
     }
 
@@ -377,10 +376,17 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Text('Score: $_score', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text('Time: $_timeRemaining', 
+                  Text(
+                    'Score: $_score',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Time: $_timeRemaining',
                     style: TextStyle(
-                      fontSize: 18, 
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: _timeRemaining <= 10 ? Colors.red : Colors.black,
                     ),
@@ -422,7 +428,10 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                               backgroundColor: _getOptionColor(index),
                               foregroundColor: Colors.white,
                             ),
-                            child: Text(option, style: const TextStyle(fontSize: 16)),
+                            child: Text(
+                              option,
+                              style: const TextStyle(fontSize: 16),
+                            ),
                           ),
                         ),
                       );
@@ -438,8 +447,10 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   }
 
   Widget _buildResultsScreen() {
-    final accuracy = _questions.isEmpty ? 0.0 : (_score / _questions.length) * 100;
-    
+    final accuracy = _questions.isEmpty
+        ? 0.0
+        : (_score / _questions.length) * 100;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quiz Complete!'),
@@ -521,10 +532,11 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   @override
   void applyGamePreferences(UserGamePreferences prefs) {
     final categoryChanged = _category != prefs.preferredCategory;
-    final shouldReload = _difficulty != prefs.preferredDifficulty ||
-                        categoryChanged ||
-                        _questionCount != prefs.preferredQuestionCount ||
-                        _timeLimit != prefs.preferredTimeLimit;
+    final shouldReload =
+        _difficulty != prefs.preferredDifficulty ||
+        categoryChanged ||
+        _questionCount != prefs.preferredQuestionCount ||
+        _timeLimit != prefs.preferredTimeLimit;
 
     // Clear cache if category changed to ensure fresh questions
     if (categoryChanged) {
@@ -582,7 +594,9 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
             children: [
               const Icon(Icons.sync, color: Colors.white, size: 16),
               const SizedBox(width: 8),
-              Text('Settings synced: ${prefs.preferredCategory.name} - ${prefs.preferredDifficulty.name}'),
+              Text(
+                'Settings synced: ${prefs.preferredCategory.name} - ${prefs.preferredDifficulty.name}',
+              ),
             ],
           ),
           duration: const Duration(seconds: 2),

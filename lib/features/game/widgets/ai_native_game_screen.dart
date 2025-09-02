@@ -513,44 +513,37 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
 
   @override
   Widget build(BuildContext context) {
-    // CRITICAL: Real-time preference synchronization
-    ref.listen<UserGamePreferences?>(
-      currentUserGamePreferencesProvider,
-      (previous, next) {
-        if (next != null && mounted) {
-          debugPrint('🔄 AI Game: Preferences changed');
-          debugPrint('   New category: ${next.preferredCategory.name}');
-          
-          final categoryChanged = _selectedTopic != next.preferredCategory;
-          
-          // Update AI game preferences immediately
-          setState(() {
-            // Map standard preferences to AI difficulty
-            _selectedDifficulty = _mapGameDifficultyToAI(next.preferredDifficulty);
-            _selectedTopic = next.preferredCategory;
-            _selectedQuestionCount = next.preferredQuestionCount;
-            _selectedTimeLimit = next.preferredTimeLimit;
-          });
-          
-          // CRITICAL: Force regenerate questions if category changed
-          if (categoryChanged && _questions != null && _questions!.isNotEmpty) {
-            debugPrint('🔄 AI Game: Regenerating questions for ${next.preferredCategory.name}');
-            _regenerateQuestionsIfNeeded();
-          }
-          
-          // Show sync feedback
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('AI Game switched to ${next.preferredCategory.name}!'),
-                backgroundColor: Colors.purple,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+    // Watch preferences for changes
+    final currentPrefs = ref.watch(currentUserGamePreferencesProvider);
+
+    // Handle preference changes
+    if (currentPrefs != null && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final categoryChanged =
+              _selectedTopic != currentPrefs.preferredCategory;
+
+          if (categoryChanged ||
+              _selectedDifficulty !=
+                  _mapGameDifficultyToAI(currentPrefs.preferredDifficulty)) {
+            setState(() {
+              _selectedDifficulty = _mapGameDifficultyToAI(
+                currentPrefs.preferredDifficulty,
+              );
+              _selectedTopic = currentPrefs.preferredCategory;
+              _selectedQuestionCount = currentPrefs.preferredQuestionCount;
+              _selectedTimeLimit = currentPrefs.preferredTimeLimit;
+            });
+
+            if (categoryChanged &&
+                _questions != null &&
+                _questions!.isNotEmpty) {
+              _regenerateQuestionsIfNeeded();
+            }
           }
         }
-      },
-    );
+      });
+    }
 
     final themeData = ref.watch(themeDataProvider);
     final colorScheme = themeData.colorScheme.toColorScheme();

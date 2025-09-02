@@ -14,19 +14,10 @@ class DebugPreferenceTest extends ConsumerWidget {
     // Watch the current preferences
     final prefs = ref.watch(currentUserGamePreferencesProvider);
     
-    // Also listen for changes
-    ref.listen<UserGamePreferences?>(
-      currentUserGamePreferencesProvider,
-      (previous, next) {
-        if (next != null) {
-          debugPrint('🔍 DEBUG: Preference change detected!');
-          debugPrint('   Category: ${next.preferredCategory.name}');
-          debugPrint('   Difficulty: ${next.preferredDifficulty.name}');
-          debugPrint('   Question Count: ${next.preferredQuestionCount}');
-          debugPrint('   Time Limit: ${next.preferredTimeLimit}');
-        }
-      },
-    );
+    // Watch for changes (using ref.watch instead of ref.listen)
+    if (prefs != null) {
+      // Debug info is shown in the UI below
+    }
 
     return Scaffold(
       appBar: AppBar(
