@@ -23,7 +23,7 @@ class PerformanceTracker {
   void startTimer(String operationId, {Map<String, dynamic>? metadata}) {
     if (_activeTimers.containsKey(operationId)) {
       if (kDebugMode) {
-        print('⚠️ Timer for $operationId already exists, stopping previous timer');
+        debugPrint('⚠️ Timer for $operationId already exists, stopping previous timer');
       }
       stopTimer(operationId);
     }
@@ -31,7 +31,7 @@ class PerformanceTracker {
     _activeTimers[operationId] = Stopwatch()..start();
     
     if (kDebugMode) {
-      print('⏱️ Started timer for: $operationId');
+      debugPrint('⏱️ Started timer for: $operationId');
     }
   }
 
@@ -44,7 +44,7 @@ class PerformanceTracker {
     final stopwatch = _activeTimers.remove(operationId);
     if (stopwatch == null) {
       if (kDebugMode) {
-        print('⚠️ No timer found for: $operationId');
+        debugPrint('⚠️ No timer found for: $operationId');
       }
       return null;
     }
@@ -210,7 +210,7 @@ class PerformanceTracker {
     if (shouldLog && kDebugMode) {
       final duration = metric.duration.inMilliseconds;
       final emoji = duration > 1000 ? '🐌' : duration > 500 ? '⚠️' : '⚡';
-      print('$emoji Performance: ${metric.operationId} took ${duration}ms');
+      debugPrint('$emoji Performance: ${metric.operationId} took ${duration}ms');
     }
 
     _metricsStream.add(metric);

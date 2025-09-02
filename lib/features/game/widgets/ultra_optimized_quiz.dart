@@ -57,7 +57,7 @@ class _UltraOptimizedQuizState extends ConsumerState<UltraOptimizedQuiz>
   int _questionCount = 10;
   int _timeLimit = 30;
   bool _soundOn = true;
-  bool _hapticOn = true;
+  final bool _hapticOn = true;
   GradeLevel _userGradeLevel = GradeLevel.grade5;
 
   @override
