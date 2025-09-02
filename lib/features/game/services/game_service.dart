@@ -21,6 +21,50 @@ class GameService {
 
   GameService(this._prefs, this._hiveBox);
 
+  /// Clear cached questions for a specific category (useful when preferences change)
+  Future<void> clearCachedQuestionsForCategory(GameCategory category) async {
+    try {
+      final allQuestions = await _loadAllCachedQuestions();
+      
+      // Remove all cached questions for this category
+      final keysToRemove = allQuestions.keys
+          .where((key) => key.contains('_${category.name}_'))
+          .toList();
+      
+      for (final key in keysToRemove) {
+        allQuestions.remove(key);
+      }
+      
+      await _saveAllCachedQuestions(allQuestions);
+      
+      if (kDebugMode) {
+        print('🗑️ Cleared cached questions for category: ${category.name}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error clearing cached questions: $e');
+      }
+    }
+  }
+
+  /// Clear all cached questions (useful for major preference changes)
+  Future<void> clearAllCachedQuestions() async {
+    try {
+      await _prefs.remove(_cachedQuestionsKey);
+      if (_hiveBox != null) {
+        await _hiveBox.delete(_cachedQuestionsKey);
+      }
+      
+      if (kDebugMode) {
+        print('🗑️ Cleared all cached questions');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error clearing all cached questions: $e');
+      }
+    }
+  }
+
   /// Generate AI-powered questions for a specific grade and category
   Future<List<AIQuestion>> generateAIQuestions({
     required GradeLevel gradeLevel,
@@ -29,18 +73,22 @@ class GameService {
     required int count,
     String? userId,
     Map<String, dynamic>? userContext,
+    bool forceRefresh = false, // Add option to bypass cache
   }) async {
     try {
-      // Try to get cached AI questions first
-      final cachedQuestions = await _getCachedAIQuestions(
-        gradeLevel,
-        category,
-        difficulty,
-      );
+      // Skip cache if force refresh is requested (for preference changes)
+      if (!forceRefresh) {
+        // Try to get cached AI questions first
+        final cachedQuestions = await _getCachedAIQuestions(
+          gradeLevel,
+          category,
+          difficulty,
+        );
 
-      // Only use cache if we have enough questions
-      if (cachedQuestions.length >= count) {
-        return cachedQuestions.take(count).toList();
+        // Only use cache if we have enough questions
+        if (cachedQuestions.length >= count) {
+          return cachedQuestions.take(count).toList();
+        }
       }
 
       // Generate new AI-powered questions
@@ -446,11 +494,8 @@ class GameService {
       GameCategory.calculus,
     ];
 
-    // Randomly select category if not specified, or use provided category
-    final selectedCategory =
-        category == GameCategory.addition && random.nextBool()
-        ? questionTypes[random.nextInt(questionTypes.length)]
-        : category;
+    // FIXED: Always use the user's selected category - respect user preferences!
+    final selectedCategory = category;
 
     // Generate question based on category and grade
     switch (selectedCategory) {
@@ -1423,6 +1468,22 @@ class GameService {
         print('Error loading cached questions: $e');
       }
       return {};
+    }
+  }
+
+  /// Save all cached questions
+  Future<void> _saveAllCachedQuestions(Map<String, dynamic> allQuestions) async {
+    try {
+      await _prefs.setString(_cachedQuestionsKey, jsonEncode(allQuestions));
+      
+      // Also save to Hive for better performance
+      if (_hiveBox != null) {
+        await _hiveBox.put(_cachedQuestionsKey, jsonEncode(allQuestions));
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving cached questions: $e');
+      }
     }
   }
 

@@ -122,12 +122,18 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
     setState(() => _isLoading = true);
     
     try {
+      // Debug: Print what category we're requesting
+      debugPrint('🎯 Loading game with category: ${_category.name}');
+      debugPrint('🎯 Difficulty: ${_difficulty.name}');
+      debugPrint('🎯 Question count: $_questionCount');
+      
       final gameService = ref.read(gameServiceProvider);
       final aiQuestions = await gameService.generateAIQuestions(
         gradeLevel: GradeLevel.grade5,
         category: _category,
         difficulty: _difficulty,
         count: _questionCount,
+        forceRefresh: true, // Always get fresh questions to reflect preference changes
       );
 
       setState(() {
@@ -135,12 +141,19 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
           'question': q.question,
           'options': q.options,
           'correct': q.correctAnswer,
+          'category': q.category.name, // Store category for verification
         }).toList();
         _currentIndex = 0;
         _score = 0;
         _timeRemaining = _timeLimit;
         _isLoading = false;
       });
+      
+      // Debug: Verify questions match requested category
+      debugPrint('✅ Generated ${aiQuestions.length} questions for ${_category.name}');
+      for (int i = 0; i < aiQuestions.length && i < 3; i++) {
+        debugPrint('   Q${i+1}: ${aiQuestions[i].category.name} - ${aiQuestions[i].question.substring(0, 50)}...');
+      }
       
       _startTimer();
     } catch (e) {
@@ -393,10 +406,18 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   // UnifiedPreferenceSyncMixin implementations
   @override
   void applyGamePreferences(UserGamePreferences prefs) {
+    final categoryChanged = _category != prefs.preferredCategory;
     final shouldReload = _difficulty != prefs.preferredDifficulty ||
-                        _category != prefs.preferredCategory ||
+                        categoryChanged ||
                         _questionCount != prefs.preferredQuestionCount ||
                         _timeLimit != prefs.preferredTimeLimit;
+
+    // Clear cache if category changed to ensure fresh questions
+    if (categoryChanged) {
+      final gameService = ref.read(gameServiceProvider);
+      gameService.clearCachedQuestionsForCategory(_category);
+      gameService.clearCachedQuestionsForCategory(prefs.preferredCategory);
+    }
 
     setState(() {
       _difficulty = prefs.preferredDifficulty;
@@ -409,6 +430,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
 
     // Reload game if core parameters changed
     if (shouldReload && _questions.isNotEmpty) {
+      debugPrint('🔄 Reloading game due to preference changes');
       _loadGame();
     }
   }
