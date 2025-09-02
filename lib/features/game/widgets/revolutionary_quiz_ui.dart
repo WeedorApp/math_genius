@@ -116,20 +116,63 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
 
       if (!mounted) return;  // Check mounted state after async operation
 
-      // Optimized conversion with pre-allocated list
-      final questions = List<Map<String, dynamic>>.generate(
-        aiQuestions.length,
-        (index) {
-          final aiQ = aiQuestions[index];
-          return {
-            'question': aiQ.question,
-            'options': aiQ.options,
-            'correctIndex': aiQ.correctAnswer,
-            'hint': aiQ.hint,
-            'explanation': aiQ.explanation,
-          };
-        },
-      );
+      // Enhanced conversion with validation for perfect sync
+      final questions = <Map<String, dynamic>>[];
+      
+      for (int i = 0; i < aiQuestions.length; i++) {
+        final aiQ = aiQuestions[i];
+        
+        // Validate question-answer synchronization
+        if (aiQ.options.isEmpty) {
+          if (kDebugMode) debugPrint('❌ Question ${i + 1}: No options provided');
+          continue;
+        }
+        
+        if (aiQ.correctAnswer < 0 || aiQ.correctAnswer >= aiQ.options.length) {
+          if (kDebugMode) {
+            debugPrint('❌ Question ${i + 1}: Invalid correct answer index');
+            debugPrint('   Correct index: ${aiQ.correctAnswer}');
+            debugPrint('   Options length: ${aiQ.options.length}');
+          }
+          continue;
+        }
+        
+        // Create validated question
+        final questionData = {
+          'question': aiQ.question.trim(),
+          'options': aiQ.options.map((opt) => opt.trim()).toList(),
+          'correctIndex': aiQ.correctAnswer,
+          'hint': aiQ.hint?.trim(),
+          'explanation': aiQ.explanation?.trim(),
+          'category': _category.name,
+          'questionNumber': i + 1,
+        };
+        
+        questions.add(questionData);
+        
+        if (kDebugMode) {
+          debugPrint('✅ Question ${i + 1} validated and synced:');
+          debugPrint('   Q: ${aiQ.question.substring(0, aiQ.question.length.clamp(0, 40))}...');
+          debugPrint('   Correct: "${aiQ.options[aiQ.correctAnswer]}"');
+        }
+      }
+
+      // Ensure we have enough valid questions
+      if (questions.length < 3) {
+        if (kDebugMode) {
+          debugPrint('❌ Not enough valid questions: ${questions.length}');
+        }
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error: Not enough valid questions generated. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
 
       if (mounted) {
         setState(() {
@@ -145,6 +188,10 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
           _questionStartTime = DateTime.now();
           _isLoading = false;
         });
+
+        if (kDebugMode) {
+          debugPrint('🎯 Game loaded with ${questions.length} validated questions');
+        }
 
         _startTimer();
 
@@ -965,85 +1012,176 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
   Widget _buildCompactQuestionCard(Map<String, dynamic> question) {
     final questionText = question['question'] as String? ?? 'Question not available';
     final hint = question['hint'] as String?;
+    final options = question['options'] as List<String>? ?? [];
+    final correctIndex = question['correctIndex'] as int? ?? 0;
     final categoryColor = _getCategoryColor(_category);
+    
+    // Enhanced validation for question-answer sync
+    if (kDebugMode) {
+      debugPrint('🔍 Question-Answer Sync Check:');
+      debugPrint('   Question: ${questionText.substring(0, questionText.length.clamp(0, 50))}...');
+      debugPrint('   Options count: ${options.length}');
+      debugPrint('   Correct index: $correctIndex');
+      debugPrint('   Valid sync: ${correctIndex >= 0 && correctIndex < options.length}');
+    }
     
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: categoryColor.withValues(alpha: 0.15),
-          width: 1,
+        gradient: LinearGradient(
+          colors: [
+            Colors.white,
+            categoryColor.withValues(alpha: 0.02),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: categoryColor.withValues(alpha: 0.2),
+          width: 1.5,
+        ),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
+            color: categoryColor.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Compact category icon
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: categoryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                _getCategoryIcon(_category),
-                size: 22,
-                color: categoryColor,
-              ),
+            // Enhanced category icon with question number
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        categoryColor.withValues(alpha: 0.15),
+                        categoryColor.withValues(alpha: 0.25),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: categoryColor.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    _getCategoryIcon(_category),
+                    size: 24,
+                    color: categoryColor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: categoryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Question ${_currentIndex + 1}',
+                    style: TextStyle(
+                      color: categoryColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
             
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             
-            // Question text (optimized for space)
+            // Enhanced question text with better typography
             Expanded(
               child: Center(
                 child: Text(
                   questionText,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1A202C),
-                    height: 1.2,
+                    height: 1.3,
+                    letterSpacing: 0.3,
                   ),
                   textAlign: TextAlign.center,
-                  maxLines: 3,
+                  maxLines: 4,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
             
-            // Compact hint button
-            if (hint != null && hint.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              TextButton.icon(
-                onPressed: () => _showPremiumHint(hint),
-                icon: Icon(
-                  Icons.lightbulb_outline,
-                  size: 14,
-                  color: categoryColor,
+            // Question-answer sync indicator
+            if (kDebugMode) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (correctIndex >= 0 && correctIndex < options.length) 
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                label: Text(
-                  'Hint',
+                child: Text(
+                  'Sync: ${(correctIndex >= 0 && correctIndex < options.length) ? "✅" : "❌"}',
                   style: TextStyle(
-                    color: categoryColor,
-                    fontSize: 12,
+                    fontSize: 10,
+                    color: (correctIndex >= 0 && correctIndex < options.length) 
+                        ? Colors.green 
+                        : Colors.red,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  minimumSize: const Size(60, 28),
+              ),
+              const SizedBox(height: 8),
+            ],
+            
+            // Enhanced hint button
+            if (hint != null && hint.isNotEmpty) ...[
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      categoryColor.withValues(alpha: 0.1),
+                      categoryColor.withValues(alpha: 0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: categoryColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: TextButton.icon(
+                  onPressed: () => _showEnhancedHint(hint, questionText),
+                  icon: Icon(
+                    Icons.lightbulb_rounded,
+                    size: 16,
+                    color: categoryColor,
+                  ),
+                  label: Text(
+                    'Need a hint?',
+                    style: TextStyle(
+                      color: categoryColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
                 ),
               ),
             ],
@@ -1299,31 +1437,40 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
       return const SizedBox.shrink();
     }
 
+    // Enhanced color system with better contrast
     const colors = [
-      Color(0xFF3B82F6), // Blue
-      Color(0xFF10B981), // Green  
-      Color(0xFFF59E0B), // Orange
-      Color(0xFF8B5CF6), // Purple
+      Color(0xFF2563EB), // Rich Blue
+      Color(0xFF059669), // Rich Green  
+      Color(0xFFD97706), // Rich Orange
+      Color(0xFF7C3AED), // Rich Purple
     ];
     
     final buttonColor = colors[index.clamp(0, colors.length - 1)];
+    final currentQuestion = _questions.isNotEmpty && _currentIndex < _questions.length 
+        ? _questions[_currentIndex] 
+        : null;
+    final correctIndex = currentQuestion?['correctIndex'] as int? ?? -1;
+    final isCorrectAnswer = index == correctIndex;
     
     return Container(
-      height: height.clamp(40.0, 60.0),
+      height: height.clamp(44.0, 70.0),
+      margin: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: buttonColor.withValues(alpha: 0.12),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: buttonColor.withValues(alpha: 0.15),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: ElevatedButton(
         onPressed: _answerSubmitted ? null : () {
           if (kDebugMode) {
-            debugPrint('🎯 Answer button $index tapped - Option: $option');
+            debugPrint('🎯 Answer $index selected: "$option"');
+            debugPrint('🔍 Question-Answer Sync: ${isCorrectAnswer ? "CORRECT CHOICE" : "WRONG CHOICE"}');
+            debugPrint('🔍 Correct answer should be index: $correctIndex');
           }
           
           if (_hapticOn) {
@@ -1333,23 +1480,29 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
           _submitAnswer(index);
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: _answerSubmitted ? Colors.grey.shade400 : buttonColor,
+          backgroundColor: _answerSubmitted 
+              ? Colors.grey.shade400 
+              : buttonColor,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: Row(
           children: [
-            // Compact letter badge
+            // Enhanced letter badge
             Container(
-              width: 24,
-              height: 24,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(6),
+                color: Colors.white.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 1,
+                ),
               ),
               child: Center(
                 child: Text(
@@ -1357,27 +1510,57 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: 15,
                   ),
                 ),
               ),
             ),
             
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             
-            // Compact option text
+            // Enhanced option text
             Expanded(
               child: Text(
                 option,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
+                  height: 1.2,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            
+            // Debug sync indicator
+            if (kDebugMode) ...[
+              const SizedBox(width: 8),
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: isCorrectAnswer 
+                      ? Colors.green.withValues(alpha: 0.3)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    width: 1,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    isCorrectAnswer ? '✓' : '',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -1765,6 +1948,137 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showEnhancedHint(String hint, String questionText) {
+    final categoryColor = _getCategoryColor(_category);
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.white, categoryColor.withValues(alpha: 0.02)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: categoryColor.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with category context
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: categoryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.lightbulb_rounded,
+                      color: categoryColor,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hint for ${_getCategoryDisplayName(_category)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: categoryColor,
+                          ),
+                        ),
+                        Text(
+                          'Question ${_currentIndex + 1} of ${_questions.length}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Question context
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  questionText.length > 100 
+                      ? '${questionText.substring(0, 100)}...'
+                      : questionText,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Hint content
+              Text(
+                hint,
+                style: const TextStyle(
+                  fontSize: 16,
+                  height: 1.4,
+                  color: Color(0xFF1A202C),
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Action button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: categoryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Got it!',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
