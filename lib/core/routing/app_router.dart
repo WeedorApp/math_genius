@@ -93,13 +93,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.gameSelection,
         name: 'game-selection',
         pageBuilder: (context, state) =>
-            _buildPage(state, const game.GameSelectionScreen()),
+            _buildPage(state, const game.EnhancedGameSelectionScreen()),
         routes: [
           GoRoute(
             path: 'classic',
             name: 'classic-quiz',
             pageBuilder: (context, state) =>
-                _buildPage(state, const game.ClassicQuizScreen()),
+                _buildPage(state, const game.SimpleUnifiedQuiz()),
           ),
           GoRoute(
             path: 'ai-native',

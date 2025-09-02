@@ -9,12 +9,15 @@ export 'models/enhanced_game_model.dart';
 export 'services/ai_native_game_service.dart';
 export 'services/game_service.dart';
 export 'services/enhanced_game_service.dart';
+export 'services/unified_game_factory.dart';
 
 // Widgets
 export 'widgets/base_game_screen.dart';
+export 'widgets/simple_unified_quiz.dart';
+export 'widgets/enhanced_game_selection_screen.dart';
 export 'widgets/ai_native_game_screen.dart';
 export 'widgets/chatgpt_enhanced_game_screen.dart';
-export 'widgets/classic_quiz_screen.dart';
+export 'widgets/classic_quiz_screen.dart'; // Legacy
 export 'widgets/game_design_cards.dart';
 export 'widgets/game_selection_screen.dart';
 export 'widgets/game_mode_selector.dart';

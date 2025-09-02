@@ -10,7 +10,7 @@ import '../models/game_model.dart';
 import '../mixins/game_preferences_mixin.dart';
 import '../mixins/game_navigation_mixin.dart';
 
-/// Base class for all game screens to eliminate code duplication
+/// Enhanced Base class for all game screens with comprehensive features
 abstract class BaseGameScreen<T extends ConsumerStatefulWidget> extends ConsumerState<T>
     with
         GamePreferencesMixin<T>,
@@ -31,6 +31,18 @@ abstract class BaseGameScreen<T extends ConsumerStatefulWidget> extends Consumer
   String? currentSessionId;
   bool isLoading = false;
   String? errorMessage;
+
+  // Advanced game state
+  int consecutiveCorrect = 0;
+  int consecutiveIncorrect = 0;
+  final List<GameCategory> strugglingTopics = [];
+  final Map<GameCategory, double> topicAccuracy = {};
+  GradeLevel studentGradeLevel = GradeLevel.grade5;
+  
+  // Analytics and tracking
+  DateTime? gameStartTime;
+  final List<Map<String, dynamic>> answerHistory = [];
+  Map<String, dynamic>? gameResults;
 
   // Core preferences state
   @override
@@ -84,6 +96,12 @@ abstract class BaseGameScreen<T extends ConsumerStatefulWidget> extends Consumer
   Future<void> generateQuestions();
   Future<void> submitAnswer(int answerIndex);
   void nextQuestion();
+  
+  // Optional methods with default implementations
+  Widget buildSelectionScreens(BuildContext context) => buildGameContent(context);
+  Widget buildResultsScreen(BuildContext context) => _buildDefaultResultsScreen();
+  void onGameComplete() => _handleGameComplete();
+  void onQuestionAnswered(bool isCorrect, Duration responseTime) => _trackAnswer(isCorrect, responseTime);
 
   // Common implementations
   void startTimer() {
@@ -242,6 +260,75 @@ abstract class BaseGameScreen<T extends ConsumerStatefulWidget> extends Consumer
     );
   }
 
+  // Enhanced analytics and game management
+  void _trackAnswer(bool isCorrect, Duration responseTime) {
+    answerHistory.add({
+      'questionIndex': currentQuestionIndex,
+      'isCorrect': isCorrect,
+      'responseTime': responseTime.inMilliseconds,
+      'timestamp': DateTime.now().toIso8601String(),
+      'hintsUsed': hintsUsed,
+    });
+
+    if (isCorrect) {
+      consecutiveCorrect++;
+      consecutiveIncorrect = 0;
+    } else {
+      consecutiveIncorrect++;
+      consecutiveCorrect = 0;
+    }
+
+    // Update topic accuracy
+    final category = selectedCategory;
+    if (category != null) {
+      final currentAccuracy = topicAccuracy[category] ?? 0.0;
+      final totalAnswers = answerHistory.where((h) => h['questionIndex'] <= currentQuestionIndex).length;
+      final correctAnswers = answerHistory.where((h) => h['questionIndex'] <= currentQuestionIndex && h['isCorrect']).length;
+      topicAccuracy[category] = correctAnswers / totalAnswers;
+    }
+  }
+
+  void _handleGameComplete() {
+    gameResults = {
+      'score': score,
+      'totalQuestions': questions.length,
+      'accuracy': questions.isEmpty ? 0.0 : score / questions.length,
+      'averageResponseTime': _calculateAverageResponseTime(),
+      'hintsUsed': hintsUsed,
+      'gameStartTime': gameStartTime?.toIso8601String(),
+      'gameEndTime': DateTime.now().toIso8601String(),
+      'answerHistory': answerHistory,
+      'topicAccuracy': topicAccuracy,
+    };
+  }
+
+  double _calculateAverageResponseTime() {
+    if (answerHistory.isEmpty) return 0.0;
+    final totalTime = answerHistory.fold<int>(0, (sum, answer) => sum + (answer['responseTime'] as int));
+    return totalTime / answerHistory.length;
+  }
+
+  Widget _buildDefaultResultsScreen() {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Game Results')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Score: $score/${questions.length}', style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 16),
+            Text('Accuracy: ${((score / questions.length) * 100).toStringAsFixed(1)}%'),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Main build method
   @override
   Widget build(BuildContext context) {
@@ -251,6 +338,10 @@ abstract class BaseGameScreen<T extends ConsumerStatefulWidget> extends Consumer
 
     if (errorMessage != null) {
       return buildErrorScreen();
+    }
+
+    if (showResults) {
+      return buildResultsScreen(context);
     }
 
     return buildGameContent(context);
