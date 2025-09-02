@@ -52,7 +52,6 @@ export 'accessibility/barrel.dart';
 export 'ai/ai_service.dart';
 export 'ai/adaptive_learning_engine.dart';
 export 'ai/adaptive_learning_models.dart';
-export 'ai/enhanced_ai_tutor_service.dart';
 export 'ai/enhanced_tutor_models.dart';
 export 'ai/adaptive_game_integration.dart';
 export 'ai/adaptive_game_models.dart';

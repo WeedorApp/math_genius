@@ -11,6 +11,7 @@ export 'services/game_service.dart';
 export 'services/enhanced_game_service.dart';
 
 // Widgets
+export 'widgets/base_game_screen.dart';
 export 'widgets/ai_native_game_screen.dart';
 export 'widgets/chatgpt_enhanced_game_screen.dart';
 export 'widgets/classic_quiz_screen.dart';
