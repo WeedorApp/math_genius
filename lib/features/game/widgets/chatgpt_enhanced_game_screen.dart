@@ -661,6 +661,11 @@ class _ChatGPTEnhancedGameScreenState
       currentUserGamePreferencesProvider,
       (previous, next) {
         if (next != null && mounted) {
+          debugPrint('🔄 ChatGPT Game: Preferences changed');
+          debugPrint('   New category: ${next.preferredCategory.name}');
+          
+          final categoryChanged = _selectedTopic != next.preferredCategory;
+          
           // Update ChatGPT game preferences immediately
           setState(() {
             _selectedDifficulty = _mapGameDifficultyToAI(next.preferredDifficulty);
@@ -669,9 +674,21 @@ class _ChatGPTEnhancedGameScreenState
             _selectedTimeLimit = next.preferredTimeLimit;
           });
           
-          // Reload user preferences to refresh game
-          if (_questions != null && _questions!.isNotEmpty) {
-            _loadUserPreferences();
+          // CRITICAL: Force regenerate questions if category changed
+          if (categoryChanged && _questions != null && _questions!.isNotEmpty) {
+            debugPrint('🔄 ChatGPT Game: Regenerating questions for ${next.preferredCategory.name}');
+            _regenerateQuestionsIfNeeded();
+          }
+          
+          // Show sync feedback
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('ChatGPT Game switched to ${next.preferredCategory.name}!'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
           }
         }
       },

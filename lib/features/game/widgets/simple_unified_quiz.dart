@@ -238,7 +238,64 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
 
   @override
   Widget build(BuildContext context) {
-    // Preference synchronization is now handled by UnifiedPreferenceSyncMixin
+    // CRITICAL: Setup real-time preference listening
+    ref.listen<UserGamePreferences?>(
+      currentUserGamePreferencesProvider,
+      (previous, next) {
+        if (next != null && mounted) {
+          debugPrint('🔄 Preferences changed in SimpleUnifiedQuiz');
+          debugPrint('   Old category: ${_category.name}');
+          debugPrint('   New category: ${next.preferredCategory.name}');
+          
+          final categoryChanged = _category != next.preferredCategory;
+          final shouldReload = _difficulty != next.preferredDifficulty ||
+                              categoryChanged ||
+                              _questionCount != next.preferredQuestionCount ||
+                              _timeLimit != next.preferredTimeLimit;
+
+          // Clear cache if category changed
+          if (categoryChanged) {
+            final gameService = ref.read(gameServiceProvider);
+            gameService.clearCachedQuestionsForCategory(_category);
+            gameService.clearCachedQuestionsForCategory(next.preferredCategory);
+            debugPrint('🗑️ Cleared cache for category change');
+          }
+
+          setState(() {
+            _difficulty = next.preferredDifficulty;
+            _category = next.preferredCategory;
+            _questionCount = next.preferredQuestionCount;
+            _timeLimit = next.preferredTimeLimit;
+            _soundOn = next.soundEnabled;
+            _hapticOn = next.hapticFeedbackEnabled;
+          });
+
+          // CRITICAL: Reload game immediately if parameters changed
+          if (shouldReload && _questions.isNotEmpty) {
+            debugPrint('🔄 Reloading game with new preferences');
+            _loadGame();
+          }
+
+          // Show sync feedback
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.sync, color: Colors.white, size: 16),
+                    const SizedBox(width: 8),
+                    Text('Switched to ${next.preferredCategory.name}!'),
+                  ],
+                ),
+                duration: const Duration(seconds: 2),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      },
+    );
 
     if (_isLoading) {
       return const Scaffold(

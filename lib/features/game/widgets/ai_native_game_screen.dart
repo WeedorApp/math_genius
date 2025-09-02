@@ -518,6 +518,11 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
       currentUserGamePreferencesProvider,
       (previous, next) {
         if (next != null && mounted) {
+          debugPrint('🔄 AI Game: Preferences changed');
+          debugPrint('   New category: ${next.preferredCategory.name}');
+          
+          final categoryChanged = _selectedTopic != next.preferredCategory;
+          
           // Update AI game preferences immediately
           setState(() {
             // Map standard preferences to AI difficulty
@@ -527,9 +532,21 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
             _selectedTimeLimit = next.preferredTimeLimit;
           });
           
-          // Reload user preferences to refresh game
-          if (_questions != null && _questions!.isNotEmpty) {
-            _loadUserPreferences();
+          // CRITICAL: Force regenerate questions if category changed
+          if (categoryChanged && _questions != null && _questions!.isNotEmpty) {
+            debugPrint('🔄 AI Game: Regenerating questions for ${next.preferredCategory.name}');
+            _regenerateQuestionsIfNeeded();
+          }
+          
+          // Show sync feedback
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('AI Game switched to ${next.preferredCategory.name}!'),
+                backgroundColor: Colors.purple,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
           }
         }
       },
