@@ -99,7 +99,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'classic',
             name: 'classic-quiz',
             pageBuilder: (context, state) =>
-                _buildPage(state, const game.SimpleUnifiedQuiz()),
+                _buildPage(state, const game.ImprovedUnifiedQuiz()),
           ),
           GoRoute(
             path: 'debug',

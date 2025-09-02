@@ -16,7 +16,8 @@ export 'services/unified_game_factory.dart';
 
 // Widgets
 export 'widgets/base_game_screen.dart';
-export 'widgets/simple_unified_quiz.dart';
+export 'widgets/improved_unified_quiz.dart';
+export 'widgets/simple_unified_quiz.dart'; // Legacy - has structural issues
 export 'widgets/enhanced_game_selection_screen.dart';
 export 'widgets/ai_native_game_screen.dart';
 export 'widgets/chatgpt_enhanced_game_screen.dart';

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 // Core imports
 import '../../../core/barrel.dart';
@@ -36,6 +37,16 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   bool _showResults = false;
   Timer? _timer;
   int _timeRemaining = 30;
+
+  // Enhanced game mechanics
+  int _currentStreak = 0;
+  int _bestStreak = 0;
+  int _totalCorrect = 0;
+  int _totalIncorrect = 0;
+  bool _isOnFire = false; // 5+ streak
+  List<bool> _answerHistory = [];
+  double _averageResponseTime = 0.0;
+  DateTime? _questionStartTime;
 
   // Animation controllers for enhanced UI
   late AnimationController _fadeController;
@@ -267,7 +278,9 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No questions generated. Please try again.')),
+            const SnackBar(
+              content: Text('No questions generated. Please try again.'),
+            ),
           );
         }
         return;
@@ -279,14 +292,25 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
               (q) => {
                 'question': q.question,
                 'options': q.options,
-                'correct': q.correctAnswer.clamp(0, q.options.length - 1), // Clamp to valid range
-                'category': q.category.name, // Store category for verification
+                'correct': q.correctAnswer.clamp(
+                  0,
+                  q.options.length - 1,
+                ), // Clamp to valid range
+                'category': q.category.name,
+                'hint': q.hint,
+                'explanation': q.explanation,
               },
             )
             .toList();
         _currentIndex = 0;
         _score = 0;
+        _currentStreak = 0;
+        _totalCorrect = 0;
+        _totalIncorrect = 0;
+        _isOnFire = false;
+        _answerHistory.clear();
         _timeRemaining = _timeLimit;
+        _questionStartTime = DateTime.now();
         _isLoading = false;
       });
 
@@ -328,26 +352,226 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
 
     // Safety check to prevent RangeError
     if (_currentIndex >= _questions.length || _questions.isEmpty) {
-      debugPrint('❌ Range error prevented: _currentIndex $_currentIndex >= ${_questions.length}');
+      debugPrint(
+        '❌ Range error prevented: _currentIndex $_currentIndex >= ${_questions.length}',
+      );
       return;
     }
 
+    final responseTime = _questionStartTime != null
+        ? DateTime.now().difference(_questionStartTime!).inMilliseconds
+        : 0;
+
     final isCorrect = answerIndex == _questions[_currentIndex]['correct'];
+    final question = _questions[_currentIndex];
+
+    // Update game statistics
+    _answerHistory.add(isCorrect);
+    _updateGameStats(isCorrect, responseTime);
+
     if (isCorrect) {
-      setState(() => _score++);
+      setState(() {
+        _score++;
+        _currentStreak++;
+        _totalCorrect++;
+        if (_currentStreak > _bestStreak) {
+          _bestStreak = _currentStreak;
+        }
+        if (_currentStreak >= 5) {
+          _isOnFire = true;
+        }
+      });
+    } else {
+      setState(() {
+        _currentStreak = 0;
+        _totalIncorrect++;
+        _isOnFire = false;
+      });
     }
 
-    // Show feedback
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isCorrect ? 'Correct! 🎉' : 'Try again! 💪'),
-          backgroundColor: isCorrect ? Colors.green : Colors.red,
-          duration: const Duration(seconds: 1),
+    // Enhanced feedback with streak information
+    _showEnhancedFeedback(isCorrect, question);
+
+    // Trigger haptic feedback if enabled
+    if (_hapticOn) {
+      if (isCorrect) {
+        HapticFeedback.lightImpact();
+      } else {
+        HapticFeedback.heavyImpact();
+      }
+    }
+
+    // Move to next question
+    _moveToNextQuestion();
+  }
+
+  void _updateGameStats(bool isCorrect, int responseTime) {
+    // Update average response time
+    final totalAnswers = _answerHistory.length;
+    _averageResponseTime =
+        ((_averageResponseTime * (totalAnswers - 1)) + responseTime) /
+        totalAnswers;
+
+    // Adaptive difficulty adjustment
+    _checkForDifficultyAdjustment();
+  }
+
+  void _checkForDifficultyAdjustment() {
+    // Only adjust if we have enough data and auto-adjust is enabled
+    if (_answerHistory.length < 3) return;
+
+    final recentAnswers = _answerHistory.take(5).toList();
+    final recentAccuracy =
+        recentAnswers.where((answer) => answer).length / recentAnswers.length;
+
+    // Suggest difficulty increase if doing very well
+    if (recentAccuracy >= 0.9 && _currentStreak >= 5) {
+      _suggestDifficultyIncrease();
+    }
+    // Suggest difficulty decrease if struggling
+    else if (recentAccuracy <= 0.4 && _currentStreak == 0) {
+      _suggestDifficultyDecrease();
+    }
+  }
+
+  void _suggestDifficultyIncrease() {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.trending_up, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text('You\'re doing great! Try a harder difficulty?'),
+            ),
+          ],
         ),
-      );
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Upgrade',
+          textColor: Colors.white,
+          onPressed: () => _increaseDifficulty(),
+        ),
+      ),
+    );
+  }
+
+  void _suggestDifficultyDecrease() {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.support, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Expanded(child: Text('Having trouble? Try an easier difficulty?')),
+          ],
+        ),
+        backgroundColor: Colors.orange,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Easier',
+          textColor: Colors.white,
+          onPressed: () => _decreaseDifficulty(),
+        ),
+      ),
+    );
+  }
+
+  void _increaseDifficulty() {
+    GameDifficulty newDifficulty;
+    switch (_difficulty) {
+      case GameDifficulty.easy:
+        newDifficulty = GameDifficulty.normal;
+        break;
+      case GameDifficulty.normal:
+        newDifficulty = GameDifficulty.genius;
+        break;
+      case GameDifficulty.genius:
+        newDifficulty = GameDifficulty.quantum;
+        break;
+      case GameDifficulty.quantum:
+        return; // Already at max
     }
 
+    setState(() => _difficulty = newDifficulty);
+    _loadGame(); // Reload with new difficulty
+  }
+
+  void _decreaseDifficulty() {
+    GameDifficulty newDifficulty;
+    switch (_difficulty) {
+      case GameDifficulty.quantum:
+        newDifficulty = GameDifficulty.genius;
+        break;
+      case GameDifficulty.genius:
+        newDifficulty = GameDifficulty.normal;
+        break;
+      case GameDifficulty.normal:
+        newDifficulty = GameDifficulty.easy;
+        break;
+      case GameDifficulty.easy:
+        return; // Already at min
+    }
+
+    setState(() => _difficulty = newDifficulty);
+    _loadGame(); // Reload with new difficulty
+  }
+
+  void _showEnhancedFeedback(bool isCorrect, Map<String, dynamic> question) {
+    if (!mounted) return;
+
+    String message;
+    Color backgroundColor;
+    IconData icon;
+
+    if (isCorrect) {
+      if (_isOnFire) {
+        message = '🔥 ON FIRE! ${_currentStreak} in a row!';
+        backgroundColor = Colors.orange;
+        icon = Icons.local_fire_department;
+      } else if (_currentStreak >= 3) {
+        message = '⚡ ${_currentStreak} streak! Keep going!';
+        backgroundColor = Colors.blue;
+        icon = Icons.flash_on;
+      } else {
+        message = 'Correct! 🎉';
+        backgroundColor = Colors.green;
+        icon = Icons.check_circle;
+      }
+    } else {
+      message = 'Try again! 💪';
+      if (question['hint'] != null && question['hint'].toString().isNotEmpty) {
+        message += '\nHint: ${question['hint']}';
+      }
+      backgroundColor = Colors.red;
+      icon = Icons.info;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: backgroundColor,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
+  void _moveToNextQuestion() {
     // Next question or finish with smooth animations
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted && _questions.isNotEmpty) {
@@ -361,6 +585,8 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                 setState(() {
                   _currentIndex++;
                   _timeRemaining = _timeLimit;
+                  _questionStartTime =
+                      DateTime.now(); // Reset timer for response tracking
                 });
 
                 // Animate in new question
@@ -489,7 +715,9 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   Widget _buildQuestionScreen() {
     // Safety check to prevent RangeError
     if (_currentIndex >= _questions.length || _questions.isEmpty) {
-      debugPrint('❌ Range error prevented in _buildQuestionScreen: _currentIndex $_currentIndex >= ${_questions.length}');
+      debugPrint(
+        '❌ Range error prevented in _buildQuestionScreen: _currentIndex $_currentIndex >= ${_questions.length}',
+      );
       return const Scaffold(
         body: Center(
           child: Text('Error loading question. Please restart the game.'),
@@ -542,7 +770,33 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                           // Enhanced Question Card
                           Flexible(
                             flex: 2,
-                            child: _buildEnhancedQuestionCard(question),
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: _buildEnhancedQuestionCard(question),
+                                ),
+                                // Hint button
+                                if (question['hint'] != null &&
+                                    question['hint'].toString().isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: TextButton.icon(
+                                      onPressed: () =>
+                                          _showHint(question['hint']),
+                                      icon: const Icon(
+                                        Icons.lightbulb_outline,
+                                        size: 16,
+                                      ),
+                                      label: const Text('Need a hint?'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: _getCategoryColor(
+                                          _category,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
 
                           // Enhanced Answer Options
@@ -681,23 +935,22 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.star, color: Colors.amber, size: 20),
-                    const SizedBox(width: 8),
+                    Icon(Icons.star, color: Colors.amber, size: 16),
+                    const SizedBox(width: 4),
                     Text(
                       'Score',
                       style: TextStyle(
                         color: Colors.grey[600],
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
                 Text(
                   '$_score',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: _getCategoryColor(_category),
                   ),
@@ -706,8 +959,40 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
             ),
           ),
 
-          // Divider
-          Container(height: 40, width: 1, color: Colors.grey[300]),
+          // Streak Section
+          Expanded(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _isOnFire ? Icons.local_fire_department : Icons.flash_on,
+                      color: _isOnFire ? Colors.orange : Colors.blue,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Streak',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '$_currentStreak',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: _isOnFire ? Colors.orange : Colors.blue,
+                  ),
+                ),
+              ],
+            ),
+          ),
 
           // Timer Section
           Expanded(
@@ -719,24 +1004,23 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                     Icon(
                       Icons.timer,
                       color: _timeRemaining <= 10 ? Colors.red : Colors.blue,
-                      size: 20,
+                      size: 16,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
                     Text(
                       'Time',
                       style: TextStyle(
                         color: Colors.grey[600],
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
                 AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 300),
                   style: TextStyle(
-                    fontSize: _timeRemaining <= 10 ? 28 : 24,
+                    fontSize: _timeRemaining <= 10 ? 24 : 20,
                     fontWeight: FontWeight.bold,
                     color: _timeRemaining <= 10 ? Colors.red : Colors.blue,
                   ),
@@ -980,16 +1264,42 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                               Colors.amber,
                             ),
                             _buildStatColumn(
+                              'Best Streak',
+                              '$_bestStreak',
+                              _bestStreak >= 5
+                                  ? Icons.local_fire_department
+                                  : Icons.flash_on,
+                              _bestStreak >= 5 ? Colors.orange : Colors.blue,
+                            ),
+                            _buildStatColumn(
                               'Accuracy',
                               '${accuracy.toStringAsFixed(1)}%',
                               Icons.track_changes,
                               resultColor,
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
                             _buildStatColumn(
                               'Category',
                               _category.name,
                               _getCategoryIcon(_category),
                               _getCategoryColor(_category),
+                            ),
+                            _buildStatColumn(
+                              'Avg Time',
+                              '${(_averageResponseTime / 1000).toStringAsFixed(1)}s',
+                              Icons.speed,
+                              Colors.purple,
+                            ),
+                            _buildStatColumn(
+                              'Grade',
+                              _userGradeLevel.name.toUpperCase(),
+                              Icons.school,
+                              Colors.green,
                             ),
                           ],
                         ),
@@ -1109,21 +1419,54 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
     );
   }
 
+  void _showHint(String hint) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.lightbulb, color: _getCategoryColor(_category)),
+            const SizedBox(width: 8),
+            const Text('Hint'),
+          ],
+        ),
+        content: Text(hint, style: const TextStyle(fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Got it!'),
+          ),
+        ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+
   void _playAgain() {
     // Stop any running timers and reset animations
     _timer?.cancel();
     _fadeController.reset();
     _slideController.reset();
     _progressController.reset();
-    
+
     setState(() {
       _currentIndex = 0;
       _score = 0;
       _showResults = false;
       _timeRemaining = _timeLimit;
       _questions.clear(); // Clear questions to prevent stale data
+      // Reset enhanced game stats
+      _currentStreak = 0;
+      _totalCorrect = 0;
+      _totalIncorrect = 0;
+      _isOnFire = false;
+      _answerHistory.clear();
+      _averageResponseTime = 0.0;
+      _questionStartTime = DateTime.now();
     });
-    
+
     // Start fresh animations
     _fadeController.forward();
     _loadGame();
