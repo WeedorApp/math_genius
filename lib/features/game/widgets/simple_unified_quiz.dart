@@ -26,7 +26,8 @@ class SimpleUnifiedQuiz extends ConsumerStatefulWidget {
 class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
     with
         GamePreferencesMixin<SimpleUnifiedQuiz>,
-        UnifiedPreferenceSyncMixin<SimpleUnifiedQuiz> {
+        UnifiedPreferenceSyncMixin<SimpleUnifiedQuiz>,
+        TickerProviderStateMixin {
   // Game state
   List<Map<String, dynamic>> _questions = [];
   int _currentIndex = 0;
@@ -35,6 +36,18 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   bool _showResults = false;
   Timer? _timer;
   int _timeRemaining = 30;
+  
+  // Animation controllers for enhanced UI
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late AnimationController _pulseController;
+  late AnimationController _progressController;
+  
+  // Animations
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _progressAnimation;
 
   // Preferences (implementing GamePreferencesMixin)
   GameDifficulty _difficulty = GameDifficulty.normal;
@@ -53,10 +66,47 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
       debugPrint('✅ NEW SIMPLE UNIFIED QUIZ SCREEN BEING USED! (Correct)');
       debugPrint('🎮 SIMPLE UNIFIED QUIZ INITIALIZING');
     }
+    _initializeAnimations();
     initializePreferencesSync();
     initializeUnifiedPreferenceSync(); // Add comprehensive sync
     _loadUserGradeLevel(); // Load user's actual grade level
     _loadPreferencesAndGame(); // Load preferences first, then game
+  }
+
+  void _initializeAnimations() {
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    
+    _progressController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
+    
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
+    
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1)
+        .animate(CurvedAnimation(parent: _pulseController, curve: Curves.elasticOut));
+    
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(CurvedAnimation(parent: _progressController, curve: Curves.easeInOut));
+
+    _fadeController.forward();
   }
 
   /// Load preferences first, then initialize game with correct settings
@@ -116,6 +166,10 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   @override
   void dispose() {
     _timer?.cancel();
+    _fadeController.dispose();
+    _slideController.dispose();
+    _pulseController.dispose();
+    _progressController.dispose();
     super.dispose();
   }
 
@@ -269,17 +323,35 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
       );
     }
 
-    // Next question or finish
+    // Next question or finish with smooth animations
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         if (_currentIndex < _questions.length - 1) {
-          setState(() {
-            _currentIndex++;
-            _timeRemaining = _timeLimit;
+          // Animate out current question
+          _fadeController.reverse().then((_) {
+            if (mounted) {
+              setState(() {
+                _currentIndex++;
+                _timeRemaining = _timeLimit;
+              });
+              
+              // Animate in new question
+              _slideController.reset();
+              _fadeController.forward();
+              _slideController.forward();
+              _progressController.forward();
+              _startTimer();
+            }
           });
-          _startTimer();
         } else {
-          setState(() => _showResults = true);
+          // Game complete - show results with animation
+          _fadeController.reverse().then((_) {
+            if (mounted) {
+              setState(() => _showResults = true);
+              _fadeController.forward();
+              _pulseController.repeat(reverse: true);
+            }
+          });
         }
       }
     });
@@ -302,40 +374,64 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
               _timeLimit != currentPrefs.preferredTimeLimit;
 
           if (shouldReload) {
-            debugPrint('🔄 Preferences changed - updating game');
-            debugPrint(
-              '   New category: ${currentPrefs.preferredCategory.name}',
-            );
-
-            // Clear cache if category changed
-            if (categoryChanged) {
-              final gameService = ref.read(gameServiceProvider);
-              gameService.clearCachedQuestionsForCategory(_category);
-              gameService.clearCachedQuestionsForCategory(
-                currentPrefs.preferredCategory,
-              );
-            }
-
-            setState(() {
-              _difficulty = currentPrefs.preferredDifficulty;
-              _category = currentPrefs.preferredCategory;
-              _questionCount = currentPrefs.preferredQuestionCount;
-              _timeLimit = currentPrefs.preferredTimeLimit;
-              _soundOn = currentPrefs.soundEnabled;
-              _hapticOn = currentPrefs.hapticFeedbackEnabled;
-            });
-
-            // Reload game with new preferences
-            if (_questions.isNotEmpty) {
-              _loadGame();
-            }
+            // Use the mixin's synchronized preference application
+            applySynchronizedPreferences(currentPrefs);
           }
         }
       });
     }
 
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                _getCategoryColor(_category).withValues(alpha: 0.1),
+                Colors.white,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ScaleTransition(
+                  scale: _pulseAnimation,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: _getCategoryColor(_category).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      _getCategoryIcon(_category),
+                      size: 60,
+                      color: _getCategoryColor(_category),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(_getCategoryColor(_category)),
+                  strokeWidth: 4,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Preparing ${_category.name} questions...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: _getCategoryColor(_category),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     if (_showResults) {
@@ -357,92 +453,370 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
     final options = question['options'] as List<String>;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Question ${_currentIndex + 1}/${_questions.length}'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Progress
-            LinearProgressIndicator(
-              value: (_currentIndex + 1) / _questions.length,
-            ),
-            // Score and time
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.grey[100],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Text(
-                    'Score: $_score',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'Time: $_timeRemaining',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: _timeRemaining <= 10 ? Colors.red : Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Question
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Card(
-                      elevation: 4,
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          question['question'],
-                          style: Theme.of(context).textTheme.headlineSmall,
-                          textAlign: TextAlign.center,
-                        ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              _getCategoryColor(_category).withValues(alpha: 0.1),
+              Colors.white,
+              _getCategoryColor(_category).withValues(alpha: 0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Enhanced Header
+              _buildEnhancedHeader(),
+              
+              // Animated Progress Bar
+              _buildAnimatedProgress(),
+              
+              // Enhanced Score and Timer Display
+              _buildEnhancedScoreTimer(),
+              
+              // Main Question Content
+              Expanded(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Enhanced Question Card
+                          _buildEnhancedQuestionCard(question),
+                          
+                          const SizedBox(height: 32),
+                          
+                          // Enhanced Answer Options
+                          _buildEnhancedAnswerOptions(options),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    // Options
-                    ...options.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final option = entry.value;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () => _submitAnswer(index),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.all(16),
-                              backgroundColor: _getOptionColor(index),
-                              foregroundColor: Colors.white,
-                            ),
-                            child: Text(
-                              option,
-                              style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEnhancedHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _getCategoryColor(_category),
+            _getCategoryColor(_category).withValues(alpha: 0.8),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _getCategoryColor(_category).withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => context.pop(),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _category.name.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                Text(
+                  'Question ${_currentIndex + 1} of ${_questions.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ScaleTransition(
+            scale: _pulseAnimation,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                _getCategoryIcon(_category),
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedProgress() {
+    return Container(
+      height: 8,
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        color: Colors.grey[200],
+      ),
+      child: AnimatedBuilder(
+        animation: _progressAnimation,
+        builder: (context, child) {
+          return LinearProgressIndicator(
+            value: ((_currentIndex + 1) / _questions.length) * _progressAnimation.value,
+            backgroundColor: Colors.transparent,
+            valueColor: AlwaysStoppedAnimation<Color>(_getCategoryColor(_category)),
+            borderRadius: BorderRadius.circular(4),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEnhancedScoreTimer() {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Score Section
+          Expanded(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.star, color: Colors.amber, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Score',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$_score',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: _getCategoryColor(_category),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Divider
+          Container(
+            height: 40,
+            width: 1,
+            color: Colors.grey[300],
+          ),
+          
+          // Timer Section
+          Expanded(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.timer,
+                      color: _timeRemaining <= 10 ? Colors.red : Colors.blue,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Time',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 300),
+                  style: TextStyle(
+                    fontSize: _timeRemaining <= 10 ? 28 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: _timeRemaining <= 10 ? Colors.red : Colors.blue,
+                  ),
+                  child: Text('$_timeRemaining'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedQuestionCard(Map<String, dynamic> question) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _getCategoryColor(_category).withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: _getCategoryColor(_category).withValues(alpha: 0.3),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            _getCategoryIcon(_category),
+            size: 48,
+            color: _getCategoryColor(_category),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            question['question'],
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedAnswerOptions(List<String> options) {
+    return Column(
+      children: options.asMap().entries.map((entry) {
+        final index = entry.key;
+        final option = entry.value;
+        
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: double.infinity,
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: () => _submitAnswer(index),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: [
+                        _getOptionColor(index),
+                        _getOptionColor(index).withValues(alpha: 0.8),
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    border: Border.all(
+                      color: _getOptionColor(index).withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            String.fromCharCode(65 + index), // A, B, C, D
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
                         ),
-                      );
-                    }),
-                  ],
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          option,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        size: 16,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -450,63 +824,196 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
     final accuracy = _questions.isEmpty
         ? 0.0
         : (_score / _questions.length) * 100;
+    
+    final isExcellent = accuracy >= 90;
+    final isGood = accuracy >= 70;
+    final resultColor = isExcellent ? Colors.green : isGood ? Colors.orange : Colors.red;
+    final resultIcon = isExcellent ? Icons.star : isGood ? Icons.thumb_up : Icons.trending_up;
+    final resultMessage = isExcellent ? 'Excellent!' : isGood ? 'Good Job!' : 'Keep Practicing!';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quiz Complete!'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.star, size: 80, color: Colors.amber),
-              const SizedBox(height: 24),
-              Text(
-                'Final Score',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '$_score / ${_questions.length}',
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${accuracy.toStringAsFixed(1)}% Accuracy',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 48),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              resultColor.withValues(alpha: 0.1),
+              Colors.white,
+              resultColor.withValues(alpha: 0.05),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: _playAgain,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Play Again'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
+                  // Animated Result Icon
+                  ScaleTransition(
+                    scale: _pulseAnimation,
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: resultColor.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        resultIcon,
+                        size: 80,
+                        color: resultColor,
+                      ),
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(Icons.home),
-                    label: const Text('Home'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
-                      foregroundColor: Colors.white,
+                  
+                  const SizedBox(height: 32),
+                  
+                  // Result Message
+                  Text(
+                    resultMessage,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: resultColor,
                     ),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Score Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: resultColor.withValues(alpha: 0.2),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: resultColor.withValues(alpha: 0.3),
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildStatColumn('Score', '$_score/${_questions.length}', Icons.star, Colors.amber),
+                            _buildStatColumn('Accuracy', '${accuracy.toStringAsFixed(1)}%', Icons.track_changes, resultColor),
+                            _buildStatColumn('Category', _category.name, _getCategoryIcon(_category), _getCategoryColor(_category)),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Container(
+                          height: 8,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            color: Colors.grey[200],
+                          ),
+                          child: LinearProgressIndicator(
+                            value: accuracy / 100,
+                            backgroundColor: Colors.transparent,
+                            valueColor: AlwaysStoppedAnimation<Color>(resultColor),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Enhanced Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionButton(
+                          onPressed: _playAgain,
+                          icon: Icons.refresh,
+                          label: 'Play Again',
+                          color: _getCategoryColor(_category),
+                          isPrimary: true,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildActionButton(
+                          onPressed: () => context.pop(),
+                          icon: Icons.home,
+                          label: 'Home',
+                          color: Colors.grey.shade600,
+                          isPrimary: false,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatColumn(String label, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required bool isPrimary,
+  }) {
+    return SizedBox(
+      height: 56,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isPrimary ? color : Colors.white,
+          foregroundColor: isPrimary ? Colors.white : color,
+          elevation: isPrimary ? 8 : 2,
+          shadowColor: color.withValues(alpha: 0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: color.withValues(alpha: 0.5),
+              width: isPrimary ? 0 : 2,
+            ),
           ),
         ),
       ),
@@ -524,8 +1031,79 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   }
 
   Color _getOptionColor(int index) {
-    final colors = [Colors.blue, Colors.green, Colors.orange, Colors.red];
+    final colors = [
+      Colors.blue.shade600,
+      Colors.green.shade600, 
+      Colors.orange.shade600, 
+      Colors.red.shade600
+    ];
     return colors[index % colors.length];
+  }
+
+  Color _getCategoryColor(GameCategory category) {
+    switch (category) {
+      case GameCategory.addition:
+        return Colors.green.shade600;
+      case GameCategory.subtraction:
+        return Colors.blue.shade600;
+      case GameCategory.multiplication:
+        return Colors.orange.shade600;
+      case GameCategory.division:
+        return Colors.red.shade600;
+      case GameCategory.fractions:
+        return Colors.purple.shade600;
+      case GameCategory.decimals:
+        return Colors.teal.shade600;
+      case GameCategory.percentages:
+        return Colors.indigo.shade600;
+      case GameCategory.geometry:
+        return Colors.pink.shade600;
+      case GameCategory.algebra:
+        return Colors.deepOrange.shade600;
+      case GameCategory.calculus:
+        return Colors.brown.shade600;
+      case GameCategory.wordProblems:
+        return Colors.cyan.shade600;
+      case GameCategory.patterns:
+        return Colors.lime.shade600;
+      case GameCategory.measurement:
+        return Colors.amber.shade600;
+      case GameCategory.dataAnalysis:
+        return Colors.blueGrey.shade600;
+    }
+  }
+
+  IconData _getCategoryIcon(GameCategory category) {
+    switch (category) {
+      case GameCategory.addition:
+        return Icons.add_circle;
+      case GameCategory.subtraction:
+        return Icons.remove_circle;
+      case GameCategory.multiplication:
+        return Icons.close;
+      case GameCategory.division:
+        return Icons.pie_chart;
+      case GameCategory.fractions:
+        return Icons.pie_chart_outline;
+      case GameCategory.decimals:
+        return Icons.looks_one;
+      case GameCategory.percentages:
+        return Icons.percent;
+      case GameCategory.geometry:
+        return Icons.pentagon;
+      case GameCategory.algebra:
+        return Icons.functions;
+      case GameCategory.calculus:
+        return Icons.calculate;
+      case GameCategory.wordProblems:
+        return Icons.description;
+      case GameCategory.patterns:
+        return Icons.pattern;
+      case GameCategory.measurement:
+        return Icons.straighten;
+      case GameCategory.dataAnalysis:
+        return Icons.analytics;
+    }
   }
 
   // UnifiedPreferenceSyncMixin implementations

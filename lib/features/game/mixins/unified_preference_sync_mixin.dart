@@ -11,20 +11,11 @@ mixin UnifiedPreferenceSyncMixin<T extends ConsumerStatefulWidget>
 
   /// Initialize preference synchronization
   void initializeUnifiedPreferenceSync() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _setupPreferenceListening();
-    });
-  }
-
-  /// Setup real-time preference listening
-  void _setupPreferenceListening() {
-    // Note: Using ref.listen in build method is not allowed
-    // Individual games should use ref.watch with WidgetsBinding.instance.addPostFrameCallback
-    // This mixin provides the structure for applying preferences
+    // This will be called by games to set up sync
   }
 
   /// Apply synchronized preferences with comprehensive coverage
-  void _applySynchronizedPreferences(UserGamePreferences prefs) {
+  void applySynchronizedPreferences(UserGamePreferences prefs) {
     if (!mounted || _isSyncing) return;
 
     _isSyncing = true;
