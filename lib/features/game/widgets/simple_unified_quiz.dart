@@ -41,13 +41,35 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   int _timeLimit = 30;
   bool _soundOn = true;
   bool _hapticOn = true;
+  GradeLevel _userGradeLevel = GradeLevel.grade5; // Default, will be loaded from user
 
   @override
   void initState() {
     super.initState();
     initializePreferencesSync();
     initializeUnifiedPreferenceSync(); // Add comprehensive sync
+    _loadUserGradeLevel(); // Load user's actual grade level
     _loadGame();
+  }
+
+  /// Load the user's actual grade level from their profile
+  Future<void> _loadUserGradeLevel() async {
+    try {
+      final userService = ref.read(userManagementServiceProvider);
+      final currentUser = await userService.getCurrentUser();
+      
+      if (currentUser?.gradeLevel != null) {
+        setState(() {
+          _userGradeLevel = currentUser!.gradeLevel!;
+        });
+        debugPrint('👤 Loaded user grade level: ${_userGradeLevel.name}');
+      } else {
+        debugPrint('⚠️ User has no grade level set, using default: ${_userGradeLevel.name}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading user grade level: $e');
+      // Keep default grade level
+    }
   }
 
   @override
@@ -129,7 +151,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
       
       final gameService = ref.read(gameServiceProvider);
       final aiQuestions = await gameService.generateAIQuestions(
-        gradeLevel: GradeLevel.grade5,
+        gradeLevel: _userGradeLevel, // Use actual user grade level!
         category: _category,
         difficulty: _difficulty,
         count: _questionCount,
@@ -149,10 +171,10 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
         _isLoading = false;
       });
       
-      // Debug: Verify questions match requested category
-      debugPrint('✅ Generated ${aiQuestions.length} questions for ${_category.name}');
+      // Debug: Verify questions match requested category AND grade
+      debugPrint('✅ Generated ${aiQuestions.length} questions for ${_category.name} (${_userGradeLevel.name})');
       for (int i = 0; i < aiQuestions.length && i < 3; i++) {
-        debugPrint('   Q${i+1}: ${aiQuestions[i].category.name} - ${aiQuestions[i].question.substring(0, 50)}...');
+        debugPrint('   Q${i+1}: ${aiQuestions[i].category.name} (${aiQuestions[i].gradeLevel.name}) - ${aiQuestions[i].question.substring(0, 50)}...');
       }
       
       _startTimer();
