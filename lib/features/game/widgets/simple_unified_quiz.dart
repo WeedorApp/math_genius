@@ -36,13 +36,13 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   bool _showResults = false;
   Timer? _timer;
   int _timeRemaining = 30;
-  
+
   // Animation controllers for enhanced UI
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late AnimationController _pulseController;
   late AnimationController _progressController;
-  
+
   // Animations
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -78,33 +78,39 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    
+
     _progressController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0)
-        .animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
-    
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
-    
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1)
-        .animate(CurvedAnimation(parent: _pulseController, curve: Curves.elasticOut));
-    
-    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0)
-        .animate(CurvedAnimation(parent: _progressController, curve: Curves.easeInOut));
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
+
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.elasticOut),
+    );
+
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+    );
 
     _fadeController.forward();
   }
@@ -334,7 +340,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                 _currentIndex++;
                 _timeRemaining = _timeLimit;
               });
-              
+
               // Animate in new question
               _slideController.reset();
               _fadeController.forward();
@@ -403,7 +409,9 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                   child: Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: _getCategoryColor(_category).withValues(alpha: 0.1),
+                      color: _getCategoryColor(
+                        _category,
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Icon(
@@ -415,7 +423,9 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                 ),
                 const SizedBox(height: 24),
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(_getCategoryColor(_category)),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _getCategoryColor(_category),
+                  ),
                   strokeWidth: 4,
                 ),
                 const SizedBox(height: 16),
@@ -470,34 +480,38 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
             children: [
               // Enhanced Header
               _buildEnhancedHeader(),
-              
+
               // Animated Progress Bar
               _buildAnimatedProgress(),
-              
+
               // Enhanced Score and Timer Display
               _buildEnhancedScoreTimer(),
-              
+
               // Main Question Content
               Expanded(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: SlideTransition(
                     position: _slideAnimation,
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Enhanced Question Card
-                          _buildEnhancedQuestionCard(question),
-                          
-                          const SizedBox(height: 32),
-                          
-                          // Enhanced Answer Options
-                          _buildEnhancedAnswerOptions(options),
-                        ],
+                                    child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Enhanced Question Card
+                      Flexible(
+                        flex: 2,
+                        child: _buildEnhancedQuestionCard(question),
                       ),
-                    ),
+
+                      // Enhanced Answer Options
+                      Flexible(
+                        flex: 3,
+                        child: _buildEnhancedAnswerOptions(options),
+                      ),
+                    ],
+                  ),
+                ),
                   ),
                 ),
               ),
@@ -510,7 +524,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
 
   Widget _buildEnhancedHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -520,9 +534,9 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
         ),
         boxShadow: [
           BoxShadow(
-            color: _getCategoryColor(_category).withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: _getCategoryColor(_category).withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -551,10 +565,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                 ),
                 Text(
                   'Question ${_currentIndex + 1} of ${_questions.length}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ],
             ),
@@ -591,9 +602,13 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
         animation: _progressAnimation,
         builder: (context, child) {
           return LinearProgressIndicator(
-            value: ((_currentIndex + 1) / _questions.length) * _progressAnimation.value,
+            value:
+                ((_currentIndex + 1) / _questions.length) *
+                _progressAnimation.value,
             backgroundColor: Colors.transparent,
-            valueColor: AlwaysStoppedAnimation<Color>(_getCategoryColor(_category)),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              _getCategoryColor(_category),
+            ),
             borderRadius: BorderRadius.circular(4),
           );
         },
@@ -603,8 +618,8 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
 
   Widget _buildEnhancedScoreTimer() {
     return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -649,14 +664,10 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
               ],
             ),
           ),
-          
+
           // Divider
-          Container(
-            height: 40,
-            width: 1,
-            color: Colors.grey[300],
-          ),
-          
+          Container(height: 40, width: 1, color: Colors.grey[300]),
+
           // Timer Section
           Expanded(
             child: Column(
@@ -701,7 +712,7 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   Widget _buildEnhancedQuestionCard(Map<String, dynamic> question) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -718,21 +729,26 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             _getCategoryIcon(_category),
-            size: 48,
+            size: 32,
             color: _getCategoryColor(_category),
           ),
-          const SizedBox(height: 16),
-          Text(
-            question['question'],
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-              height: 1.4,
+          const SizedBox(height: 12),
+          Flexible(
+            child: Text(
+              question['question'],
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+                height: 1.3,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -744,22 +760,22 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
       children: options.asMap().entries.map((entry) {
         final index = entry.key;
         final option = entry.value;
-        
+
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: SizedBox(
             width: double.infinity,
+            height: 56, // Fixed height to ensure consistent spacing
             child: Material(
-              elevation: 4,
-              borderRadius: BorderRadius.circular(16),
+              elevation: 3,
+              borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 onTap: () => _submitAnswer(index),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                     gradient: LinearGradient(
                       colors: [
                         _getOptionColor(index),
@@ -776,11 +792,11 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                   child: Row(
                     children: [
                       Container(
-                        width: 32,
-                        height: 32,
+                        width: 28,
+                        height: 28,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Center(
                           child: Text(
@@ -788,26 +804,23 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize: 14,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           option,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        color: Colors.white.withValues(alpha: 0.7),
-                        size: 16,
                       ),
                     ],
                   ),
@@ -824,12 +837,24 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
     final accuracy = _questions.isEmpty
         ? 0.0
         : (_score / _questions.length) * 100;
-    
+
     final isExcellent = accuracy >= 90;
     final isGood = accuracy >= 70;
-    final resultColor = isExcellent ? Colors.green : isGood ? Colors.orange : Colors.red;
-    final resultIcon = isExcellent ? Icons.star : isGood ? Icons.thumb_up : Icons.trending_up;
-    final resultMessage = isExcellent ? 'Excellent!' : isGood ? 'Good Job!' : 'Keep Practicing!';
+    final resultColor = isExcellent
+        ? Colors.green
+        : isGood
+        ? Colors.orange
+        : Colors.red;
+    final resultIcon = isExcellent
+        ? Icons.star
+        : isGood
+        ? Icons.thumb_up
+        : Icons.trending_up;
+    final resultMessage = isExcellent
+        ? 'Excellent!'
+        : isGood
+        ? 'Good Job!'
+        : 'Keep Practicing!';
 
     return Scaffold(
       body: Container(
@@ -847,30 +872,28 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
         child: SafeArea(
           child: FadeTransition(
             opacity: _fadeAnimation,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const SizedBox(height: 40),
+                  
                   // Animated Result Icon
                   ScaleTransition(
                     scale: _pulseAnimation,
                     child: Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: resultColor.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        resultIcon,
-                        size: 80,
-                        color: resultColor,
-                      ),
+                      child: Icon(resultIcon, size: 60, color: resultColor),
                     ),
                   ),
-                  
-                  const SizedBox(height: 32),
-                  
+
+                  const SizedBox(height: 24),
+
                   // Result Message
                   Text(
                     resultMessage,
@@ -879,13 +902,13 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                       color: resultColor,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Score Card
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(28),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -906,9 +929,24 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildStatColumn('Score', '$_score/${_questions.length}', Icons.star, Colors.amber),
-                            _buildStatColumn('Accuracy', '${accuracy.toStringAsFixed(1)}%', Icons.track_changes, resultColor),
-                            _buildStatColumn('Category', _category.name, _getCategoryIcon(_category), _getCategoryColor(_category)),
+                            _buildStatColumn(
+                              'Score',
+                              '$_score/${_questions.length}',
+                              Icons.star,
+                              Colors.amber,
+                            ),
+                            _buildStatColumn(
+                              'Accuracy',
+                              '${accuracy.toStringAsFixed(1)}%',
+                              Icons.track_changes,
+                              resultColor,
+                            ),
+                            _buildStatColumn(
+                              'Category',
+                              _category.name,
+                              _getCategoryIcon(_category),
+                              _getCategoryColor(_category),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 20),
@@ -921,16 +959,18 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
                           child: LinearProgressIndicator(
                             value: accuracy / 100,
                             backgroundColor: Colors.transparent,
-                            valueColor: AlwaysStoppedAnimation<Color>(resultColor),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              resultColor,
+                            ),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Enhanced Action Buttons
                   Row(
                     children: [
@@ -964,7 +1004,12 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
     );
   }
 
-  Widget _buildStatColumn(String label, String value, IconData icon, Color color) {
+  Widget _buildStatColumn(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Icon(icon, color: color, size: 24),
@@ -1033,9 +1078,9 @@ class _SimpleUnifiedQuizState extends ConsumerState<SimpleUnifiedQuiz>
   Color _getOptionColor(int index) {
     final colors = [
       Colors.blue.shade600,
-      Colors.green.shade600, 
-      Colors.orange.shade600, 
-      Colors.red.shade600
+      Colors.green.shade600,
+      Colors.orange.shade600,
+      Colors.red.shade600,
     ];
     return colors[index % colors.length];
   }
