@@ -16,13 +16,11 @@ export 'services/unified_game_factory.dart';
 
 // Widgets
 export 'widgets/base_game_screen.dart';
-export 'widgets/improved_unified_quiz.dart';
-export 'widgets/ultra_optimized_quiz.dart';
-export 'widgets/revolutionary_quiz_ui.dart';
+export 'widgets/revolutionary_quiz_ui.dart'; // Single, best quiz UI
 export 'widgets/enhanced_game_selection_screen.dart';
 export 'widgets/ai_native_game_screen.dart';
 export 'widgets/chatgpt_enhanced_game_screen.dart';
-export 'widgets/classic_quiz_screen.dart'; // Legacy
+// Legacy quiz screens removed - using Revolutionary Quiz UI only
 export 'widgets/debug_preference_test.dart'; // Debug tool
 export 'widgets/game_design_cards.dart';
 export 'widgets/game_selection_screen.dart';

@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/barrel.dart';
 
 // Game screens
-import 'improved_unified_quiz.dart';
+import 'revolutionary_quiz_ui.dart';
 import 'ai_native_game_screen.dart';
 import 'chatgpt_enhanced_game_screen.dart';
 // Quick start functionality integrated inline
@@ -49,7 +49,7 @@ class _GameSelectionScreenState extends ConsumerState<GameSelectionScreen> {
       late final Widget selectedChild;
       switch (_selectedGame!) {
         case GameSelectionMode.classic:
-          selectedChild = const ImprovedUnifiedQuiz();
+          selectedChild = const RevolutionaryQuizUI();
           break;
         case GameSelectionMode.aiNative:
           selectedChild = const AINativeGameScreen();
