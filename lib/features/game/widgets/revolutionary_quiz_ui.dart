@@ -600,33 +600,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
 
   Widget _buildRevolutionaryQuizScreen(bool isTablet) {
     if (_currentIndex >= _questions.length || _questions.isEmpty) {
-      return Scaffold(
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                _getCategoryColor(_category).withValues(alpha: 0.1),
-                Colors.white,
-              ],
-            ),
-          ),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red),
-                SizedBox(height: 16),
-                Text(
-                  'Error loading question',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 8),
-                Text('Please restart the game'),
-              ],
-            ),
-          ),
-        ),
-      );
+      return _buildErrorScreen('Error loading question');
     }
 
     final question = _questions[_currentIndex];
@@ -636,256 +610,211 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
     }
     
     final progress = _questions.isNotEmpty ? (_currentIndex + 1) / _questions.length : 0.0;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Container(
+        height: screenHeight,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              _getCategoryColor(_category).withValues(alpha: 0.05),
+              _getCategoryColor(_category).withValues(alpha: 0.03),
               Colors.white,
-              _getCategoryColor(_category).withValues(alpha: 0.02),
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            stops: const [0.0, 0.7, 1.0],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Revolutionary header with glassmorphism
-              _buildGlassmorphicHeader(progress),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxHeight = constraints.maxHeight;
               
-              // Main content with advanced animations
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 24 : 16,
-                    vertical: 8,
+              // Dynamic sizing based on available height
+              final headerHeight = (maxHeight * 0.12).clamp(70.0, 90.0);
+              final statsHeight = (maxHeight * 0.08).clamp(50.0, 60.0);
+              final questionHeight = (maxHeight * 0.35).clamp(120.0, 200.0);
+              
+              return Column(
+                children: [
+                  // Compact header
+                  SizedBox(
+                    height: headerHeight,
+                    child: _buildCompactHeader(progress),
                   ),
-                  child: Column(
-                    children: [
-                      // Enhanced stats
-                      _buildPremiumStatsBar(),
-                      
-                      const SizedBox(height: 12),
-                      
-                      // Question card (no animations)
-                      Flexible(
-                        flex: 2,
-                        child: _buildPremiumQuestionCard(question),
+                  
+                  // Main content area
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isTablet ? 20 : 12,
+                        vertical: 4,
                       ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Answer grid (no animations)
-                      Flexible(
-                        flex: 3,
-                        child: _buildRevolutionaryAnswerGrid(options, isTablet),
+                      child: Column(
+                        children: [
+                          // Compact stats
+                          SizedBox(
+                            height: statsHeight,
+                            child: _buildCompactStatsBar(),
+                          ),
+                          
+                          const SizedBox(height: 8),
+                          
+                          // Question card (fixed height)
+                          SizedBox(
+                            height: questionHeight,
+                            child: _buildCompactQuestionCard(question),
+                          ),
+                          
+                          const SizedBox(height: 12),
+                          
+                          // Answer grid (remaining space)
+                          Expanded(
+                            child: _buildCompactAnswerGrid(options, isTablet),
+                          ),
+                          
+                          const SizedBox(height: 8),
+                        ],
                       ),
-                      
-                      const SizedBox(height: 4),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildGlassmorphicHeader(double progress) {
+  Widget _buildCompactHeader(double progress) {
+    final categoryColor = _getCategoryColor(_category);
+    
     return Container(
-      height: 90,
-      margin: const EdgeInsets.all(8),
+      width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            _getCategoryColor(_category).withValues(alpha: 0.9),
-            _getCategoryColor(_category).withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: categoryColor,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
         ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: _getCategoryColor(_category).withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-            spreadRadius: 2,
-          ),
-        ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
           children: [
-            // Glassmorphic background effect
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.2),
-                    Colors.white.withValues(alpha: 0.1),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-            
-            // Content
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Column(
+            // Top row with back, title, timer
+            Expanded(
+              child: Row(
                 children: [
-                  // Top row with enhanced elements
+                  // Back button
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/game-selection');
+                        }
+                      },
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 12),
+                  
+                  // Title and progress
                   Expanded(
-                    child: Row(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Premium back button
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            onPressed: () {
-                              if (context.canPop()) {
-                                context.pop();
-                              } else {
-                                context.go('/game-selection');
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.arrow_back_ios,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _getCategoryIcon(_category),
                               color: Colors.white,
-                              size: 20,
+                              size: 16,
                             ),
-                          ),
-                        ),
-                        
-                        const SizedBox(width: 16),
-                        
-                        // Enhanced title section (overflow-safe)
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Compact title row
-                              Flexible(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Icon(
-                                        _getCategoryIcon(_category),
-                                        color: Colors.white,
-                                        size: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Flexible(
-                                      child: Text(
-                                        _getCategoryDisplayName(_category),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 0.5,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                _getCategoryDisplayName(_category),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Q${_currentIndex + 1}/${_questions.length}',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        
-                        const SizedBox(width: 16),
-                        
-                        // Simple timer (no animations)
-                        Container(
-                          width: 70,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: _timeRemaining <= 10 
-                                  ? [Colors.red.shade400, Colors.red.shade600]
-                                  : [Colors.white.withValues(alpha: 0.25), Colors.white.withValues(alpha: 0.15)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '$_timeRemaining',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                        Text(
+                          'Q${_currentIndex + 1}/${_questions.length}',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
                   
-                  const SizedBox(height: 8),
+                  const SizedBox(width: 12),
                   
-                  // Enhanced progress bar with glow effect
+                  // Compact timer
                   Container(
-                    height: 6,
+                    width: 60,
+                    height: 36,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: _timeRemaining <= 10 
+                          ? Colors.red.shade500
+                          : Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        backgroundColor: Colors.transparent,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    child: Center(
+                      child: Text(
+                        '$_timeRemaining',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ],
+              ),
+            ),
+            
+            // Progress bar
+            Container(
+              height: 3,
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2),
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: progress,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
             ),
           ],
@@ -894,62 +823,100 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
     );
   }
 
-  Widget _buildPremiumStatsBar() {
+  // Removed old glassmorphic header - using compact version
+
+  Widget _buildCompactStatsBar() {
     // Cache calculations for performance
     final accuracy = _answerHistory.isEmpty 
         ? 0 
         : ((_answerHistory.where((a) => a).length / _answerHistory.length) * 100).round();
     
     return Container(
-      height: 60,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Score
-          Expanded(
-            child: _buildOptimizedStatItem(
-              Icons.star_rounded,
-              '$_score',
-              'Score',
-              Colors.amber,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            // Score
+            Expanded(
+              child: _buildCompactStatItem(
+                Icons.star_rounded,
+                '$_score',
+                'Score',
+                Colors.amber,
+              ),
             ),
-          ),
-          
-          Container(width: 1, height: 35, color: Colors.grey.shade200),
-          
-          // Streak
-          Expanded(
-            child: _buildOptimizedStatItem(
-              _isOnFire ? Icons.local_fire_department_rounded : Icons.flash_on_rounded,
-              '$_currentStreak',
-              'Streak',
-              _isOnFire ? Colors.orange : Colors.blue,
+            
+            Container(width: 1, height: 24, color: Colors.grey.shade200),
+            
+            // Streak
+            Expanded(
+              child: _buildCompactStatItem(
+                _isOnFire ? Icons.local_fire_department_rounded : Icons.flash_on_rounded,
+                '$_currentStreak',
+                'Streak',
+                _isOnFire ? Colors.orange : Colors.blue,
+              ),
             ),
-          ),
-          
-          Container(width: 1, height: 35, color: Colors.grey.shade200),
-          
-          // Accuracy
-          Expanded(
-            child: _buildOptimizedStatItem(
-              Icons.trending_up_rounded,
-              '$accuracy%',
-              'Accuracy',
-              Colors.green,
+            
+            Container(width: 1, height: 24, color: Colors.grey.shade200),
+            
+            // Accuracy
+            Expanded(
+              child: _buildCompactStatItem(
+                Icons.trending_up_rounded,
+                '$accuracy%',
+                'Accuracy',
+                Colors.green,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  // Removed old premium stats bar - using compact version
+
+  Widget _buildCompactStatItem(IconData icon, String value, String label, Color color) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 14),
+            const SizedBox(width: 4),
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 
@@ -991,6 +958,97 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCompactQuestionCard(Map<String, dynamic> question) {
+    final questionText = question['question'] as String? ?? 'Question not available';
+    final hint = question['hint'] as String?;
+    final categoryColor = _getCategoryColor(_category);
+    
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: categoryColor.withValues(alpha: 0.15),
+          width: 1,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Compact category icon
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: categoryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                _getCategoryIcon(_category),
+                size: 22,
+                color: categoryColor,
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Question text (optimized for space)
+            Expanded(
+              child: Center(
+                child: Text(
+                  questionText,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A202C),
+                    height: 1.2,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            
+            // Compact hint button
+            if (hint != null && hint.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () => _showPremiumHint(hint),
+                icon: Icon(
+                  Icons.lightbulb_outline,
+                  size: 14,
+                  color: categoryColor,
+                ),
+                label: Text(
+                  'Hint',
+                  style: TextStyle(
+                    color: categoryColor,
+                    fontSize: 12,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: const Size(60, 28),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -1104,6 +1162,74 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
           );
   }
 
+  Widget _buildCompactAnswerGrid(List<String> options, bool isTablet) {
+    if (options.isEmpty) {
+      return const Center(
+        child: Text(
+          'No answer options available',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+    final validOptions = options.length > 4 ? options.sublist(0, 4) : options;
+    if (validOptions.length < 2) {
+      return const Center(
+        child: Text(
+          'Invalid question format',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+    // Compact grid optimized for screen fitting
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final buttonHeight = (constraints.maxHeight / (isTablet ? 2 : validOptions.length)) - 8;
+        
+        if (isTablet && validOptions.length >= 4) {
+          return Column(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(child: _buildCompactAnswerButton(validOptions[0], 0, buttonHeight)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildCompactAnswerButton(validOptions[1], 1, buttonHeight)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(child: _buildCompactAnswerButton(validOptions[2], 2, buttonHeight)),
+                    const SizedBox(width: 8),
+                    if (validOptions.length > 3)
+                      Expanded(child: _buildCompactAnswerButton(validOptions[3], 3, buttonHeight))
+                    else
+                      const Expanded(child: SizedBox()),
+                  ],
+                ),
+              ),
+            ],
+          );
+        } else {
+          return Column(
+            children: validOptions.asMap().entries.map((entry) {
+              return Expanded(
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 4),
+                  child: _buildCompactAnswerButton(entry.value, entry.key, buttonHeight),
+                ),
+              );
+            }).toList(),
+          );
+        }
+      },
+    );
+  }
+
   Widget _buildRevolutionaryAnswerGrid(List<String> options, bool isTablet) {
     if (options.isEmpty) {
       return const Center(
@@ -1166,6 +1292,96 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
         }).toList(),
       );
     }
+  }
+
+  Widget _buildCompactAnswerButton(String option, int index, double height) {
+    if (option.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    const colors = [
+      Color(0xFF3B82F6), // Blue
+      Color(0xFF10B981), // Green  
+      Color(0xFFF59E0B), // Orange
+      Color(0xFF8B5CF6), // Purple
+    ];
+    
+    final buttonColor = colors[index.clamp(0, colors.length - 1)];
+    
+    return Container(
+      height: height.clamp(40.0, 60.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: buttonColor.withValues(alpha: 0.12),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: _answerSubmitted ? null : () {
+          if (kDebugMode) {
+            debugPrint('🎯 Answer button $index tapped - Option: $option');
+          }
+          
+          if (_hapticOn) {
+            HapticFeedback.selectionClick();
+          }
+          
+          _submitAnswer(index);
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _answerSubmitted ? Colors.grey.shade400 : buttonColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Row(
+          children: [
+            // Compact letter badge
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Center(
+                child: Text(
+                  String.fromCharCode(65 + index),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(width: 10),
+            
+            // Compact option text
+            Expanded(
+              child: Text(
+                option,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildRevolutionaryAnswerButton(String option, int index) {
