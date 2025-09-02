@@ -62,6 +62,8 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   int _timeLimit = 30;
   bool _soundOn = true;
   bool _hapticOn = true;
+  
+  // Performance optimizations integrated
   GradeLevel _userGradeLevel = GradeLevel.grade5;
 
   @override
@@ -125,8 +127,12 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
       CurvedAnimation(parent: _pulseController, curve: Curves.elasticInOut),
     );
 
-    // Start initial animations
-    _glowController.repeat(reverse: true);
+    // Start initial animations with performance optimization
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _glowController.repeat(reverse: true);
+      }
+    });
   }
 
   Future<void> _loadUserGradeLevel() async {
@@ -248,10 +254,12 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   void _submitAnswer(int selectedIndex) {
-    if (_currentIndex >= _questions.length) return;
+    if (_currentIndex >= _questions.length || _questions.isEmpty) return;
 
     final question = _questions[_currentIndex];
-    final correctIndex = question['correctIndex'] as int;
+    final correctIndex = question['correctIndex'] as int?;
+    if (correctIndex == null) return;
+    
     final isCorrect = selectedIndex == correctIndex;
 
     // Calculate response time
@@ -269,8 +277,11 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
       _isOnFire = _currentStreak >= 5;
       
       // Trigger celebration animations
-      _particleController.forward();
-      if (_isOnFire) {
+      if (_particleController.status != AnimationStatus.forward) {
+        _particleController.reset();
+        _particleController.forward();
+      }
+      if (_isOnFire && _glowController.status != AnimationStatus.forward) {
         _glowController.repeat(reverse: true);
       }
     } else {
@@ -345,7 +356,10 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     if (!mounted) return;
 
     // Trigger celebration particle effect
-    _particleController.forward();
+    if (_particleController.status != AnimationStatus.forward) {
+      _particleController.reset();
+      _particleController.forward();
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -394,8 +408,11 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
             _questionStartTime = DateTime.now();
             _slideController.reset();
             _slideController.forward();
-            _particleController.reset();
+            if (_particleController.status == AnimationStatus.forward) {
+              _particleController.reset();
+            }
             _pulseController.stop();
+            _pulseController.reset();
           } else {
             // Game complete
             final accuracy = (_score / _questions.length) * 100;
@@ -433,6 +450,72 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     }
   }
 
+  Widget _buildErrorScreen(String message) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              _getCategoryColor(_category).withValues(alpha: 0.1),
+              Colors.white,
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 80,
+                color: Colors.red.shade400,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Oops! Something went wrong',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/game-selection');
+                  }
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Try Again'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _getCategoryColor(_category),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -465,6 +548,16 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
 
     if (_questions.isEmpty) {
       return const Scaffold(body: Center(child: Text('Loading questions...')));
+    }
+
+    // Validate game state before building UI
+    if (!_validateGameState()) {
+      return _buildErrorScreen('Invalid game state detected');
+    }
+
+    // Monitor animation performance in debug mode
+    if (kDebugMode) {
+      _monitorAnimationPerformance();
     }
 
     return _buildRevolutionaryQuizScreen(isTablet);
@@ -568,14 +661,42 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
 
   Widget _buildRevolutionaryQuizScreen(bool isTablet) {
     if (_currentIndex >= _questions.length || _questions.isEmpty) {
-      return const Scaffold(
-        body: Center(child: Text('Error loading question. Please restart.')),
+      return Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                _getCategoryColor(_category).withValues(alpha: 0.1),
+                Colors.white,
+              ],
+            ),
+          ),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red),
+                SizedBox(height: 16),
+                Text(
+                  'Error loading question',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text('Please restart the game'),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
     final question = _questions[_currentIndex];
-    final options = question['options'] as List<String>;
-    final progress = (_currentIndex + 1) / _questions.length;
+    final options = question['options'] as List<String>? ?? [];
+    if (options.isEmpty) {
+      return _buildErrorScreen('No answer options available');
+    }
+    
+    final progress = _questions.isNotEmpty ? (_currentIndex + 1) / _questions.length : 0.0;
 
     return Scaffold(
       body: Container(
@@ -958,6 +1079,9 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   Widget _buildPremiumQuestionCard(Map<String, dynamic> question) {
+    final questionText = question['question'] as String? ?? 'Question not available';
+    final hint = question['hint'] as String?;
+    
     return AnimatedBuilder(
       animation: _bounceAnimation,
       builder: (context, child) {
@@ -965,6 +1089,10 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
           scale: _bounceAnimation.value,
           child: Container(
             width: double.infinity,
+            constraints: const BoxConstraints(
+              minHeight: 120,
+              maxHeight: 300,
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -1034,23 +1162,25 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
                   
                   const SizedBox(height: 20),
                   
-                  // Enhanced question text
-                  Text(
-                    question['question'],
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A202C),
-                      height: 1.4,
-                      letterSpacing: 0.3,
+                  // Enhanced question text with better error handling
+                  Flexible(
+                    child: Text(
+                      questionText,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A202C),
+                        height: 1.4,
+                        letterSpacing: 0.3,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   
                   // Premium hint button
-                  if (question['hint'] != null && question['hint'].toString().isNotEmpty) ...[
+                  if (hint != null && hint.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Container(
                       decoration: BoxDecoration(
@@ -1066,7 +1196,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
                         ),
                       ),
                       child: TextButton.icon(
-                        onPressed: () => _showPremiumHint(question['hint']),
+                        onPressed: () => _showPremiumHint(hint),
                         icon: Icon(
                           Icons.lightbulb_rounded,
                           size: 16,
@@ -1097,6 +1227,32 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   Widget _buildRevolutionaryAnswerGrid(List<String> options, bool isTablet) {
+    if (options.isEmpty) {
+      return Center(
+        child: Text(
+          'No answer options available',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey[600],
+          ),
+        ),
+      );
+    }
+
+    // Ensure we have at least 2 options, max 4
+    final validOptions = options.take(4).toList();
+    if (validOptions.length < 2) {
+      return Center(
+        child: Text(
+          'Invalid question format',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey[600],
+          ),
+        ),
+      );
+    }
+
     return GridView.builder(
       padding: EdgeInsets.zero,
       physics: const NeverScrollableScrollPhysics(),
@@ -1106,14 +1262,18 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
-      itemCount: options.length,
+      itemCount: validOptions.length,
       itemBuilder: (context, index) {
+        if (index >= validOptions.length) {
+          return const SizedBox.shrink();
+        }
+        
         return AnimatedBuilder(
           animation: _bounceAnimation,
           builder: (context, child) {
             return Transform.scale(
               scale: _bounceAnimation.value,
-              child: _buildRevolutionaryAnswerButton(options[index], index),
+              child: _buildRevolutionaryAnswerButton(validOptions[index], index),
             );
           },
         );
@@ -1122,6 +1282,11 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   Widget _buildRevolutionaryAnswerButton(String option, int index) {
+    // Validate input
+    if (option.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final colors = [
       [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)], // Blue gradient
       [const Color(0xFF10B981), const Color(0xFF047857)], // Green gradient
@@ -1129,7 +1294,8 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
       [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)], // Purple gradient
     ];
     
-    final colorGradient = colors[index % colors.length];
+    final safeIndex = index.clamp(0, colors.length - 1);
+    final colorGradient = colors[safeIndex];
     
     return Container(
       decoration: BoxDecoration(
@@ -1530,7 +1696,8 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
     );
   }
 
-  void _showPremiumHint(String hint) {
+  void _showPremiumHint(String? hint) {
+    if (hint == null || hint.isEmpty) return;
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1626,25 +1793,48 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
   }
 
   void _playAgain() {
-    _timer?.cancel();
-    _slideController.reset();
-    _bounceController.reset();
-    _glowController.reset();
-    _particleController.reset();
-    _pulseController.reset();
+    try {
+      // Cancel timer first
+      _timer?.cancel();
+      
+      // Safely reset all animations
+      if (_slideController.status != AnimationStatus.dismissed) {
+        _slideController.reset();
+      }
+      if (_bounceController.status != AnimationStatus.dismissed) {
+        _bounceController.reset();
+      }
+      if (_glowController.status != AnimationStatus.dismissed) {
+        _glowController.stop();
+        _glowController.reset();
+      }
+      if (_particleController.status != AnimationStatus.dismissed) {
+        _particleController.reset();
+      }
+      if (_pulseController.status != AnimationStatus.dismissed) {
+        _pulseController.stop();
+        _pulseController.reset();
+      }
 
-    setState(() {
-      _currentIndex = 0;
-      _score = 0;
-      _showResults = false;
-      _currentStreak = 0;
-      _bestStreak = 0;
-      _isOnFire = false;
-      _answerHistory.clear();
-      _averageResponseTime = 0.0;
-    });
+      setState(() {
+        _currentIndex = 0;
+        _score = 0;
+        _showResults = false;
+        _currentStreak = 0;
+        _bestStreak = 0;
+        _isOnFire = false;
+        _answerHistory.clear();
+        _averageResponseTime = 0.0;
+      });
 
-    _loadGame();
+      _loadGame();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error in _playAgain: $e');
+      }
+      // Fallback - just reload the game
+      _loadGame();
+    }
   }
 
   // Helper methods for category colors and icons
@@ -1696,23 +1886,91 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI>
 
   @override
   void dispose() {
+    // Cancel timer first
     _timer?.cancel();
+    
+    // Stop all animations before disposing
+    _slideController.stop();
+    _bounceController.stop();
+    _glowController.stop();
+    _particleController.stop();
+    _pulseController.stop();
+    
+    // Dispose animation controllers
     _slideController.dispose();
     _bounceController.dispose();
     _glowController.dispose();
     _particleController.dispose();
     _pulseController.dispose();
+    
     super.dispose();
   }
 
   void _applySynchronizedPreferences(UserGamePreferences preferences) {
-    setState(() {
-      _category = preferences.preferredCategory;
-      _difficulty = preferences.preferredDifficulty;
-      _questionCount = preferences.preferredQuestionCount;
-      _timeLimit = preferences.preferredTimeLimit;
-      _soundOn = preferences.soundEnabled;
-    });
-    _loadGame();
+    try {
+      if (kDebugMode) {
+        debugPrint('🔄 Applying synchronized preferences:');
+        debugPrint('   Category: ${_category.name} → ${preferences.preferredCategory.name}');
+        debugPrint('   Difficulty: ${_difficulty.name} → ${preferences.preferredDifficulty.name}');
+        debugPrint('   Questions: $_questionCount → ${preferences.preferredQuestionCount}');
+        debugPrint('   Time Limit: $_timeLimit → ${preferences.preferredTimeLimit}');
+      }
+
+      setState(() {
+        _category = preferences.preferredCategory;
+        _difficulty = preferences.preferredDifficulty;
+        _questionCount = preferences.preferredQuestionCount;
+        _timeLimit = preferences.preferredTimeLimit;
+        _soundOn = preferences.soundEnabled;
+      });
+      
+      _loadGame();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error applying synchronized preferences: $e');
+      }
+      // Continue with current preferences if sync fails
+    }
+  }
+
+  /// Debug helper to validate game state
+  bool _validateGameState() {
+    if (_questions.isEmpty) {
+      if (kDebugMode) debugPrint('❌ Game state invalid: No questions loaded');
+      return false;
+    }
+    
+    if (_currentIndex < 0 || _currentIndex >= _questions.length) {
+      if (kDebugMode) debugPrint('❌ Game state invalid: Current index out of bounds ($_currentIndex/${_questions.length})');
+      return false;
+    }
+    
+    final currentQuestion = _questions[_currentIndex];
+    if (currentQuestion['options'] == null || (currentQuestion['options'] as List).isEmpty) {
+      if (kDebugMode) debugPrint('❌ Game state invalid: No options for current question');
+      return false;
+    }
+    
+    if (kDebugMode) {
+      debugPrint('✅ Game state valid: Question ${_currentIndex + 1}/${_questions.length}');
+    }
+    return true;
+  }
+
+  /// Performance monitoring for animations
+  void _monitorAnimationPerformance() {
+    if (kDebugMode) {
+      final activeAnimations = [
+        if (_slideController.isAnimating) 'slide',
+        if (_bounceController.isAnimating) 'bounce', 
+        if (_glowController.isAnimating) 'glow',
+        if (_particleController.isAnimating) 'particle',
+        if (_pulseController.isAnimating) 'pulse',
+      ];
+      
+      if (activeAnimations.isNotEmpty) {
+        debugPrint('🎭 Active animations: ${activeAnimations.join(', ')}');
+      }
+    }
   }
 }
