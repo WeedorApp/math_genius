@@ -27,7 +27,6 @@ void main() {
         expect(question.category, GameCategory.addition);
         // PreK questions should have emojis and simple numbers
         expect(question.question, contains('🍎'));
-        print('PreK: ${question.question}');
       }
     });
 
@@ -43,7 +42,6 @@ void main() {
       for (final question in questions) {
         expect(question.gradeLevel, GradeLevel.grade5);
         expect(question.category, GameCategory.addition);
-        print('Grade 5: ${question.question}');
       }
     });
 
@@ -59,7 +57,6 @@ void main() {
       for (final question in questions) {
         expect(question.gradeLevel, GradeLevel.grade12);
         expect(question.category, GameCategory.algebra);
-        print('Grade 12: ${question.question}');
       }
     });
 
@@ -80,8 +77,8 @@ void main() {
 
       // PreK should get more time (45s) than Grade 12 (25s)
       expect(prekQuestions.first.timeLimit, greaterThan(grade12Questions.first.timeLimit));
-      print('PreK time limit: ${prekQuestions.first.timeLimit}s');
-      print('Grade 12 time limit: ${grade12Questions.first.timeLimit}s');
+      expect(prekQuestions.first.timeLimit, 45);
+      expect(grade12Questions.first.timeLimit, 25);
     });
   });
 }

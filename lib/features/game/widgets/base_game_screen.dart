@@ -280,10 +280,9 @@ abstract class BaseGameScreen<T extends ConsumerStatefulWidget> extends Consumer
 
     // Update topic accuracy
     final category = selectedCategory;
-    if (category != null) {
-      final currentAccuracy = topicAccuracy[category] ?? 0.0;
-      final totalAnswers = answerHistory.where((h) => h['questionIndex'] <= currentQuestionIndex).length;
-      final correctAnswers = answerHistory.where((h) => h['questionIndex'] <= currentQuestionIndex && h['isCorrect']).length;
+    final totalAnswers = answerHistory.where((h) => h['questionIndex'] <= currentQuestionIndex).length;
+    final correctAnswers = answerHistory.where((h) => h['questionIndex'] <= currentQuestionIndex && h['isCorrect']).length;
+    if (totalAnswers > 0) {
       topicAccuracy[category] = correctAnswers / totalAnswers;
     }
   }

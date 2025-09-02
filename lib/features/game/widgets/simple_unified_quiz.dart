@@ -12,6 +12,7 @@ import '../models/game_model.dart';
 import '../mixins/game_preferences_mixin.dart';
 import '../mixins/unified_preference_sync_mixin.dart';
 import '../services/game_service.dart';
+import '../../user_management/services/user_management_service.dart';
 
 /// Simple Unified Quiz Screen
 /// Clean, production-ready implementation with unified preferences

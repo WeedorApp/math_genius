@@ -180,7 +180,7 @@ class PreferenceSyncValidator {
       final prefsService = ref.read(userPreferencesServiceProvider);
       
       // Test if settings service is working
-      final prefs = await prefsService.getGamePreferences();
+      await prefsService.getGamePreferences();
       
       return SyncValidationResult(
         testName: 'Settings Integration',

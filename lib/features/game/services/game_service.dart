@@ -484,15 +484,7 @@ class GameService {
     }
 
     // Add randomization to question generation order
-    final questionTypes = [
-      GameCategory.addition,
-      GameCategory.subtraction,
-      GameCategory.multiplication,
-      GameCategory.division,
-      GameCategory.algebra,
-      GameCategory.geometry,
-      GameCategory.calculus,
-    ];
+    // Note: questionTypes removed as we now always respect user's category choice
 
     // FIXED: Always use the user's selected category - respect user preferences!
     final selectedCategory = category;
