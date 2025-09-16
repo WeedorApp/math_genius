@@ -831,138 +831,145 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                   const SizedBox(height: 24),
                   // Answer options with enhanced design
                   ...List.generate(question.options.length, (i) {
-                        final isSelected = _selectedAnswerIndex == i;
-                        final isSubmitted = _isAnswerSelected;
+                     final isSelected = _selectedAnswerIndex == i;
+                     final isSubmitted = _isAnswerSelected;
+                     final isCorrect = isSubmitted && i == question.correctAnswer;
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          constraints: const BoxConstraints(
-                            minHeight: 60,
-                            maxHeight: 120,
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: !isSubmitted
-                                  ? () => _selectAnswer(i)
-                                  : null,
-                              borderRadius: BorderRadius.circular(16),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: _getAnswerBackgroundColor(
-                                    isSelected,
-                                    isSubmitted,
-                                    colorScheme,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: _getAnswerBorderColor(
-                                      isSelected,
-                                      isSubmitted,
-                                      colorScheme,
-                                    ),
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _getAnswerShadowColor(
-                                        isSelected,
-                                        isSubmitted,
-                                        colorScheme,
-                                      ),
-                                      blurRadius: isSelected ? 12 : 4,
-                                      offset: Offset(0, isSelected ? 6 : 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    // Enhanced option letter with modern design
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: _getOptionLetterBackgroundColor(
-                                          isSelected,
-                                          isSubmitted,
-                                          colorScheme,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                _getOptionLetterBackgroundColor(
-                                                  isSelected,
-                                                  isSubmitted,
-                                                  colorScheme,
-                                                ).withValues(alpha: 0.3),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          String.fromCharCode(65 + i),
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: _getOptionLetterTextColor(
-                                              isSelected,
-                                              isSubmitted,
-                                              colorScheme,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-
-                                     // Option text with enhanced typography
-                                     Expanded(
-                                       child: Text(
-                                         question.options[i],
-                                         style: TextStyle(
-                                           fontSize: 16,
-                                           fontWeight: isSelected
-                                               ? FontWeight.w600
-                                               : FontWeight.w500,
-                                           color: _getAnswerTextColor(
-                                             isSelected,
-                                             isSubmitted,
-                                             colorScheme,
-                                           ),
-                                           height: 1.4,
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      constraints: const BoxConstraints(
+                        minHeight: 60,
+                        maxHeight: 120,
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: !isSubmitted ? () => _selectAnswer(i) : null,
+                          borderRadius: BorderRadius.circular(16),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.all(20),
+                             decoration: BoxDecoration(
+                               color: _getAnswerBackgroundColor(
+                                 isSelected,
+                                 isSubmitted,
+                                 isCorrect,
+                                 colorScheme,
+                               ),
+                               borderRadius: BorderRadius.circular(16),
+                               border: Border.all(
+                                 color: _getAnswerBorderColor(
+                                   isSelected,
+                                   isSubmitted,
+                                   isCorrect,
+                                   colorScheme,
+                                 ),
+                                 width: 2,
+                               ),
+                               boxShadow: [
+                                 BoxShadow(
+                                   color: _getAnswerShadowColor(
+                                     isSelected,
+                                     isSubmitted,
+                                     isCorrect,
+                                     colorScheme,
+                                   ),
+                                   blurRadius: isSelected ? 12 : 4,
+                                   offset: Offset(0, isSelected ? 6 : 2),
+                                 ),
+                               ],
+                             ),
+                            child: Row(
+                              children: [
+                                // Enhanced option letter with modern design
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                   decoration: BoxDecoration(
+                                     color: _getOptionLetterBackgroundColor(
+                                       isSelected,
+                                       isSubmitted,
+                                       isCorrect,
+                                       colorScheme,
+                                     ),
+                                     borderRadius: BorderRadius.circular(12),
+                                     boxShadow: [
+                                       BoxShadow(
+                                         color: _getOptionLetterBackgroundColor(
+                                           isSelected,
+                                           isSubmitted,
+                                           isCorrect,
+                                           colorScheme,
+                                         ).withValues(alpha: 0.3),
+                                         blurRadius: 8,
+                                         offset: const Offset(0, 2),
+                                       ),
+                                     ],
+                                   ),
+                                   child: Center(
+                                     child: Text(
+                                       String.fromCharCode(65 + i),
+                                       style: TextStyle(
+                                         fontSize: 18,
+                                         fontWeight: FontWeight.bold,
+                                         color: _getOptionLetterTextColor(
+                                           isSelected,
+                                           isSubmitted,
+                                           isCorrect,
+                                           colorScheme,
                                          ),
-                                         maxLines: 3,
-                                         overflow: TextOverflow.ellipsis,
                                        ),
                                      ),
-
-                                    // Selection indicator (only show selected, not correct/incorrect)
-                                    if (isSelected && isSubmitted)
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.primaryContainer,
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          Icons.check,
-                                          color: colorScheme.onPrimaryContainer,
-                                          size: 20,
-                                        ),
-                                      ),
-                                  ],
+                                   ),
                                 ),
-                              ),
+                                const SizedBox(width: 16),
+
+                                 // Option text with enhanced typography
+                                 Expanded(
+                                   child: Text(
+                                     question.options[i],
+                                     style: TextStyle(
+                                       fontSize: 16,
+                                       fontWeight: isSelected
+                                           ? FontWeight.w600
+                                           : FontWeight.w500,
+                                       color: _getAnswerTextColor(
+                                         isSelected,
+                                         isSubmitted,
+                                         isCorrect,
+                                         colorScheme,
+                                       ),
+                                       height: 1.4,
+                                     ),
+                                     maxLines: 3,
+                                     overflow: TextOverflow.ellipsis,
+                                   ),
+                                 ),
+
+                                 // Selection indicator (show selected and correct answers)
+                                 if (isSubmitted && (isSelected || isCorrect))
+                                   Container(
+                                     padding: const EdgeInsets.all(8),
+                                     decoration: BoxDecoration(
+                                       color: isCorrect 
+                                           ? Colors.green 
+                                           : colorScheme.primaryContainer,
+                                       borderRadius: BorderRadius.circular(20),
+                                     ),
+                                     child: Icon(
+                                       isCorrect ? Icons.check_circle : Icons.check,
+                                       color: isCorrect 
+                                           ? Colors.white 
+                                           : colorScheme.onPrimaryContainer,
+                                       size: 20,
+                                     ),
+                                   ),
+                              ],
                             ),
                           ),
-                        );
+                        ),
+                      ),
+                    );
                   }),
 
                   // Action buttons with enhanced design
@@ -972,37 +979,31 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: SizedBox(
                         width: double.infinity,
-                        child: _currentQuestionIndex < _questions!.length - 1
-                            ? ElevatedButton.icon(
-                                onPressed: _nextQuestion,
-                                icon: const Icon(Icons.arrow_forward),
-                                label: const Text('Next Question'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: colorScheme.primary,
-                                  foregroundColor: colorScheme.onPrimary,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              )
-                            : ElevatedButton.icon(
-                                onPressed: _endGame,
-                                icon: const Icon(Icons.check_circle),
-                                label: const Text('Complete Quiz'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
+                        child: ElevatedButton.icon(
+                          onPressed: _currentQuestionIndex < _questions!.length - 1
+                              ? _nextQuestion
+                              : _endGame,
+                          icon: Icon(_currentQuestionIndex < _questions!.length - 1
+                              ? Icons.arrow_forward
+                              : Icons.check_circle),
+                          label: Text(_currentQuestionIndex < _questions!.length - 1
+                              ? 'Next Question'
+                              : 'Complete Quiz'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _currentQuestionIndex < _questions!.length - 1
+                                ? colorScheme.primary
+                                : Colors.green,
+                            foregroundColor: _currentQuestionIndex < _questions!.length - 1
+                                ? colorScheme.onPrimary
+                                : Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1031,9 +1032,12 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   Color _getAnswerBackgroundColor(
     bool isSelected,
     bool isSubmitted,
+    bool isCorrect,
     ColorScheme colorScheme,
   ) {
-    if (isSelected && isSubmitted) {
+    if (isCorrect) {
+      return Colors.green.withValues(alpha: 0.1);
+    } else if (isSelected && isSubmitted) {
       return colorScheme.primaryContainer;
     } else if (isSelected) {
       return colorScheme.primary.withValues(alpha: 0.1);
@@ -1044,9 +1048,12 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   Color _getAnswerBorderColor(
     bool isSelected,
     bool isSubmitted,
+    bool isCorrect,
     ColorScheme colorScheme,
   ) {
-    if (isSelected && isSubmitted) {
+    if (isCorrect) {
+      return Colors.green;
+    } else if (isSelected && isSubmitted) {
       return colorScheme.primary;
     } else if (isSelected) {
       return colorScheme.primary.withValues(alpha: 0.5);
@@ -1057,9 +1064,12 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   Color _getAnswerShadowColor(
     bool isSelected,
     bool isSubmitted,
+    bool isCorrect,
     ColorScheme colorScheme,
   ) {
-    if (isSelected) {
+    if (isCorrect) {
+      return Colors.green.withValues(alpha: 0.3);
+    } else if (isSelected) {
       return colorScheme.primary.withValues(alpha: 0.2);
     }
     return colorScheme.shadow.withValues(alpha: 0.1);
@@ -1068,9 +1078,12 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   Color _getOptionLetterBackgroundColor(
     bool isSelected,
     bool isSubmitted,
+    bool isCorrect,
     ColorScheme colorScheme,
   ) {
-    if (isSelected && isSubmitted) {
+    if (isCorrect) {
+      return Colors.green;
+    } else if (isSelected && isSubmitted) {
       return colorScheme.primary;
     } else if (isSelected) {
       return colorScheme.primary.withValues(alpha: 0.2);
@@ -1081,9 +1094,12 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   Color _getOptionLetterTextColor(
     bool isSelected,
     bool isSubmitted,
+    bool isCorrect,
     ColorScheme colorScheme,
   ) {
-    if (isSelected && isSubmitted) {
+    if (isCorrect) {
+      return Colors.white;
+    } else if (isSelected && isSubmitted) {
       return colorScheme.onPrimary;
     } else if (isSelected) {
       return colorScheme.primary;
@@ -1094,9 +1110,12 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   Color _getAnswerTextColor(
     bool isSelected,
     bool isSubmitted,
+    bool isCorrect,
     ColorScheme colorScheme,
   ) {
-    if (isSelected && isSubmitted) {
+    if (isCorrect) {
+      return Colors.green.shade700;
+    } else if (isSelected && isSubmitted) {
       return colorScheme.onPrimaryContainer;
     } else if (isSelected) {
       return colorScheme.primary;
