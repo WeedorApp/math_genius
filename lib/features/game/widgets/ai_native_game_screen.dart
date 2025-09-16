@@ -390,7 +390,7 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
       });
     }
 
-    Timer(const Duration(seconds: 2), () {
+    Timer(const Duration(milliseconds: 800), () {
       if (mounted) {
         if (_currentQuestionIndex < _questions!.length - 1) {
           _nextQuestion();
