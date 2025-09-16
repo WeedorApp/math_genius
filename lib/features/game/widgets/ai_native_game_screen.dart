@@ -823,6 +823,8 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                             height: 1.3,
                           ),
                           textAlign: TextAlign.center,
+                          maxLines: 5,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
