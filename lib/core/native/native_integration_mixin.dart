@@ -13,18 +13,20 @@ import 'native_features_service.dart';
 /// - Device capability detection
 ///
 /// Usage:
-/// ```dart
+///
+
 /// class MyWidget extends ConsumerStatefulWidget {
 ///   // widget implementation
 /// }
 ///
-/// class _MyWidgetState extends ConsumerState<MyWidget>
-///     with NativeIntegrationMixin<MyWidget> {
+/// class _MyWidgetState extends ConsumerState&lt;MyWidget&gt;
+///     with NativeIntegrationMixin&lt;MyWidget&gt; {
 ///   // Use native features like:
 ///   // await triggerSuccessHaptic();
 ///   // await optimizeForCurrentPlatform();
 /// }
-/// ```
+///
+
 mixin NativeIntegrationMixin<T extends ConsumerStatefulWidget>
     on ConsumerState<T> {
   NativeFeaturesService? _nativeService;

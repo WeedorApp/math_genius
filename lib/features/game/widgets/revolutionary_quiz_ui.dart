@@ -711,14 +711,18 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
                           // Question card (fixed height)
                           SizedBox(
                             height: questionHeight,
-                            child: _buildCompactQuestionCard(question),
+                            child: isTablet 
+                                ? _buildPremiumQuestionCard(question)
+                                : _buildCompactQuestionCard(question),
                           ),
                           
                           const SizedBox(height: 12),
                           
                           // Answer grid (remaining space)
                           Expanded(
-                            child: _buildCompactAnswerGrid(options, isTablet),
+                            child: _isOnFire 
+                                ? _buildRevolutionaryAnswerGrid(options, isTablet)
+                                : _buildCompactAnswerGrid(options, isTablet),
                           ),
                           
                           const SizedBox(height: 8),
@@ -967,47 +971,7 @@ class _RevolutionaryQuizUIState extends ConsumerState<RevolutionaryQuizUI> {
     );
   }
 
-  Widget _buildOptimizedStatItem(IconData icon, String value, String label, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(icon, color: color, size: 16),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                value,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildCompactQuestionCard(Map<String, dynamic> question) {
     final questionText = question['question'] as String? ?? 'Question not available';
