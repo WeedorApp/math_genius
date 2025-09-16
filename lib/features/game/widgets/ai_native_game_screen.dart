@@ -40,6 +40,8 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   bool _isAnswerSelected = false;
   int? _selectedAnswerIndex;
   bool _showResults = false;
+  List<String>? _shuffledOptions;
+  int? _shuffledCorrectIndex;
   Map<String, dynamic>? _gameResults;
   DateTime? _gameStartTime;
 
@@ -320,6 +322,8 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
           _gameResults = null;
           _gameStartTime = DateTime.now();
         });
+        // Shuffle options for the first question
+        _shuffleOptions(questions[0]);
         _startTimer();
       } else {
         setState(() {
@@ -378,8 +382,7 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
       return;
     }
 
-    final currentQuestion = _questions![_currentQuestionIndex];
-    final isCorrect = answerIndex == currentQuestion.correctAnswer;
+    final isCorrect = answerIndex == _shuffledCorrectIndex;
 
     if (isCorrect) {
       setState(() {
@@ -398,6 +401,19 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
     });
   }
 
+  void _shuffleOptions(AIQuestion question) {
+    final options = List<String>.from(question.options);
+    final correctAnswer = question.correctAnswer;
+    
+    // Create a list of indices to shuffle
+    final indices = List.generate(options.length, (index) => index);
+    indices.shuffle();
+    
+    // Create shuffled options and find new correct index
+    _shuffledOptions = indices.map((i) => options[i]).toList();
+    _shuffledCorrectIndex = indices.indexOf(correctAnswer);
+  }
+
   void _nextQuestion() {
     if (_questions == null) return;
 
@@ -410,6 +426,8 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
       setState(() {
         _currentQuestionIndex++;
         _timeRemaining = _selectedTimeLimit;
+        // Shuffle options for the new question
+        _shuffleOptions(_questions![_currentQuestionIndex]);
       });
     } else {
       _endGame();
@@ -836,13 +854,13 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
 
                   const SizedBox(height: 24),
                   // Answer options with enhanced design
-                  ...List.generate(question.options.length, (i) {
+                  ...List.generate(_shuffledOptions?.length ?? question.options.length, (i) {
                     final isSelected = _selectedAnswerIndex == i;
                     final isSubmitted = _isAnswerSelected;
                     final isCorrect =
                         isSelected &&
                         isSubmitted &&
-                        i == question.correctAnswer;
+                        i == _shuffledCorrectIndex;
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -936,7 +954,7 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                                 // Option text with enhanced typography
                                 Expanded(
                                   child: Text(
-                                    question.options[i],
+                                    (_shuffledOptions ?? question.options)[i],
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: isSelected
@@ -982,7 +1000,6 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                       ),
                     );
                   }),
-
                 ],
               ),
             ),
