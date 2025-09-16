@@ -866,20 +866,12 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        constraints: const BoxConstraints(
-                          minHeight: 60,
-                          maxHeight: 120,
-                        ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: !isSubmitted ? () => _selectAnswer(i) : null,
                             borderRadius: BorderRadius.circular(16),
                             child: Container(
-                              constraints: const BoxConstraints(
-                                minHeight: 60,
-                                maxHeight: 120,
-                              ),
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
                                 color: _getAnswerBackgroundColor(
@@ -912,18 +904,11 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                                 ],
                               ),
                               child: Row(
-                                mainAxisSize: MainAxisSize.max,
                                 children: [
                                   // Enhanced option letter with modern design
                                   Container(
                                     width: 40,
                                     height: 40,
-                                    constraints: const BoxConstraints(
-                                      minWidth: 40,
-                                      maxWidth: 40,
-                                      minHeight: 40,
-                                      maxHeight: 40,
-                                    ),
                                     decoration: BoxDecoration(
                                       color: _getOptionLetterBackgroundColor(
                                         isSelected,
