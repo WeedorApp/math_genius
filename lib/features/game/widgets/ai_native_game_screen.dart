@@ -831,9 +831,12 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                   const SizedBox(height: 24),
                   // Answer options with enhanced design
                   ...List.generate(question.options.length, (i) {
-                     final isSelected = _selectedAnswerIndex == i;
-                     final isSubmitted = _isAnswerSelected;
-                     final isCorrect = isSelected && isSubmitted && i == question.correctAnswer;
+                    final isSelected = _selectedAnswerIndex == i;
+                    final isSubmitted = _isAnswerSelected;
+                    final isCorrect =
+                        isSelected &&
+                        isSubmitted &&
+                        i == question.correctAnswer;
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -946,26 +949,26 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                                   ),
                                 ),
 
-                                 // Selection indicator (only show for selected answer)
-                                 if (isSelected && isSubmitted)
-                                   Container(
-                                     padding: const EdgeInsets.all(8),
-                                     decoration: BoxDecoration(
-                                       color: isCorrect
-                                           ? Colors.green
-                                           : colorScheme.primaryContainer,
-                                       borderRadius: BorderRadius.circular(20),
-                                     ),
-                                     child: Icon(
-                                       isCorrect
-                                           ? Icons.check_circle
-                                           : Icons.check,
-                                       color: isCorrect
-                                           ? Colors.white
-                                           : colorScheme.onPrimaryContainer,
-                                       size: 20,
-                                     ),
-                                   ),
+                                // Selection indicator (only show for selected answer)
+                                if (isSelected && isSubmitted)
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: isCorrect
+                                          ? Colors.green
+                                          : colorScheme.primaryContainer,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Icon(
+                                      isCorrect
+                                          ? Icons.check_circle
+                                          : Icons.check,
+                                      color: isCorrect
+                                          ? Colors.white
+                                          : colorScheme.onPrimaryContainer,
+                                      size: 20,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -977,39 +980,37 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                   // Action buttons with enhanced design
                   if (_isAnswerSelected) ...[
                     const SizedBox(height: 24),
-                    Padding(
+                    Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed:
+                      child: ElevatedButton.icon(
+                        onPressed:
+                            _currentQuestionIndex < _questions!.length - 1
+                            ? _nextQuestion
+                            : _endGame,
+                        icon: Icon(
+                          _currentQuestionIndex < _questions!.length - 1
+                              ? Icons.arrow_forward
+                              : Icons.check_circle,
+                        ),
+                        label: Text(
+                          _currentQuestionIndex < _questions!.length - 1
+                              ? 'Next Question'
+                              : 'Complete Quiz',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
                               _currentQuestionIndex < _questions!.length - 1
-                              ? _nextQuestion
-                              : _endGame,
-                          icon: Icon(
-                            _currentQuestionIndex < _questions!.length - 1
-                                ? Icons.arrow_forward
-                                : Icons.check_circle,
+                              ? colorScheme.primary
+                              : Colors.green,
+                          foregroundColor:
+                              _currentQuestionIndex < _questions!.length - 1
+                              ? colorScheme.onPrimary
+                              : Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          label: Text(
-                            _currentQuestionIndex < _questions!.length - 1
-                                ? 'Next Question'
-                                : 'Complete Quiz',
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                _currentQuestionIndex < _questions!.length - 1
-                                ? colorScheme.primary
-                                : Colors.green,
-                            foregroundColor:
-                                _currentQuestionIndex < _questions!.length - 1
-                                ? colorScheme.onPrimary
-                                : Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                          minimumSize: const Size(double.infinity, 56),
                         ),
                       ),
                     ),
