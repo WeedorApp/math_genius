@@ -404,11 +404,11 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   void _shuffleOptions(AIQuestion question) {
     final options = List<String>.from(question.options);
     final correctAnswer = question.correctAnswer;
-    
+
     // Create a list of indices to shuffle
     final indices = List.generate(options.length, (index) => index);
     indices.shuffle();
-    
+
     // Create shuffled options and find new correct index
     _shuffledOptions = indices.map((i) => options[i]).toList();
     _shuffledCorrectIndex = indices.indexOf(correctAnswer);
@@ -854,152 +854,166 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
 
                   const SizedBox(height: 24),
                   // Answer options with enhanced design
-                  ...List.generate(_shuffledOptions?.length ?? question.options.length, (i) {
-                    final isSelected = _selectedAnswerIndex == i;
-                    final isSubmitted = _isAnswerSelected;
-                    final isCorrect =
-                        isSelected &&
-                        isSubmitted &&
-                        i == _shuffledCorrectIndex;
+                  ...List.generate(
+                    _shuffledOptions?.length ?? question.options.length,
+                    (i) {
+                      final isSelected = _selectedAnswerIndex == i;
+                      final isSubmitted = _isAnswerSelected;
+                      final isCorrect =
+                          isSelected &&
+                          isSubmitted &&
+                          i == _shuffledCorrectIndex;
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      constraints: const BoxConstraints(
-                        minHeight: 60,
-                        maxHeight: 120,
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: !isSubmitted ? () => _selectAnswer(i) : null,
-                          borderRadius: BorderRadius.circular(16),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: _getAnswerBackgroundColor(
-                                isSelected,
-                                isSubmitted,
-                                isCorrect,
-                                colorScheme,
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        constraints: const BoxConstraints(
+                          minHeight: 60,
+                          maxHeight: 120,
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: !isSubmitted ? () => _selectAnswer(i) : null,
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                minHeight: 60,
+                                maxHeight: 120,
                               ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: _getAnswerBorderColor(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: _getAnswerBackgroundColor(
                                   isSelected,
                                   isSubmitted,
                                   isCorrect,
                                   colorScheme,
                                 ),
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _getAnswerShadowColor(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: _getAnswerBorderColor(
                                     isSelected,
                                     isSubmitted,
                                     isCorrect,
                                     colorScheme,
                                   ),
-                                  blurRadius: isSelected ? 12 : 4,
-                                  offset: Offset(0, isSelected ? 6 : 2),
+                                  width: 2,
                                 ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                // Enhanced option letter with modern design
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: _getOptionLetterBackgroundColor(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _getAnswerShadowColor(
                                       isSelected,
                                       isSubmitted,
                                       isCorrect,
                                       colorScheme,
                                     ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: _getOptionLetterBackgroundColor(
-                                          isSelected,
-                                          isSubmitted,
-                                          isCorrect,
-                                          colorScheme,
-                                        ).withValues(alpha: 0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
+                                    blurRadius: isSelected ? 12 : 4,
+                                    offset: Offset(0, isSelected ? 6 : 2),
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      String.fromCharCode(65 + i),
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: _getOptionLetterTextColor(
-                                          isSelected,
-                                          isSubmitted,
-                                          isCorrect,
-                                          colorScheme,
-                                        ),
-                                      ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  // Enhanced option letter with modern design
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 40,
+                                      maxWidth: 40,
+                                      minHeight: 40,
+                                      maxHeight: 40,
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-
-                                // Option text with enhanced typography
-                                Expanded(
-                                  child: Text(
-                                    (_shuffledOptions ?? question.options)[i],
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.w500,
-                                      color: _getAnswerTextColor(
+                                    decoration: BoxDecoration(
+                                      color: _getOptionLetterBackgroundColor(
                                         isSelected,
                                         isSubmitted,
                                         isCorrect,
                                         colorScheme,
                                       ),
-                                      height: 1.4,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color:
+                                              _getOptionLetterBackgroundColor(
+                                                isSelected,
+                                                isSubmitted,
+                                                isCorrect,
+                                                colorScheme,
+                                              ).withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
+                                    child: Center(
+                                      child: Text(
+                                        String.fromCharCode(65 + i),
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: _getOptionLetterTextColor(
+                                            isSelected,
+                                            isSubmitted,
+                                            isCorrect,
+                                            colorScheme,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 16),
 
-                                // Selection indicator (only show for selected answer)
-                                if (isSelected && isSubmitted)
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: isCorrect
-                                          ? Colors.green
-                                          : colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Icon(
-                                      isCorrect
-                                          ? Icons.check_circle
-                                          : Icons.check,
-                                      color: isCorrect
-                                          ? Colors.white
-                                          : colorScheme.onPrimaryContainer,
-                                      size: 20,
+                                  // Option text with enhanced typography
+                                  Expanded(
+                                    child: Text(
+                                      (_shuffledOptions ?? question.options)[i],
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.w500,
+                                        color: _getAnswerTextColor(
+                                          isSelected,
+                                          isSubmitted,
+                                          isCorrect,
+                                          colorScheme,
+                                        ),
+                                        height: 1.4,
+                                      ),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                              ],
+
+                                  // Selection indicator (only show for selected answer)
+                                  if (isSelected && isSubmitted)
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: isCorrect
+                                            ? Colors.green
+                                            : colorScheme.primaryContainer,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Icon(
+                                        isCorrect
+                                            ? Icons.check_circle
+                                            : Icons.check,
+                                        color: isCorrect
+                                            ? Colors.white
+                                            : colorScheme.onPrimaryContainer,
+                                        size: 20,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
