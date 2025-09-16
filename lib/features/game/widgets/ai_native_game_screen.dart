@@ -389,7 +389,11 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
 
     Timer(const Duration(seconds: 2), () {
       if (mounted) {
-        _nextQuestion();
+        if (_currentQuestionIndex < _questions!.length - 1) {
+          _nextQuestion();
+        } else {
+          _endGame();
+        }
       }
     });
   }
@@ -979,44 +983,6 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                     );
                   }),
 
-                  // Action buttons with enhanced design
-                  if (_isAnswerSelected) ...[
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            _currentQuestionIndex < _questions!.length - 1
-                            ? _nextQuestion
-                            : _endGame,
-                        icon: Icon(
-                          _currentQuestionIndex < _questions!.length - 1
-                              ? Icons.arrow_forward
-                              : Icons.check_circle,
-                        ),
-                        label: Text(
-                          _currentQuestionIndex < _questions!.length - 1
-                              ? 'Next Question'
-                              : 'Complete Quiz',
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              _currentQuestionIndex < _questions!.length - 1
-                              ? colorScheme.primary
-                              : Colors.green,
-                          foregroundColor:
-                              _currentQuestionIndex < _questions!.length - 1
-                              ? colorScheme.onPrimary
-                              : Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          minimumSize: const Size(double.infinity, 56),
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
