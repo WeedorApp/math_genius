@@ -142,14 +142,14 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
         _timeRemaining = preferences.preferredTimeLimit;
         _selectedTimeLimit = preferences.preferredTimeLimit;
 
-      if (_selectedDifficulty != null &&
-          _selectedTopic != null &&
-          _selectedQuestionCount != null) {
-        _showTopicSelection = false;
-        _showQuestionCountSelection = false;
-        _showTimeLimitSelection = false;
-        _startGame();
-      }
+        if (_selectedDifficulty != null &&
+            _selectedTopic != null &&
+            _selectedQuestionCount != null) {
+          _showTopicSelection = false;
+          _showQuestionCountSelection = false;
+          _showTimeLimitSelection = false;
+          _startGame();
+        }
       });
     }
   }
@@ -574,24 +574,24 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
         child: Card(
           elevation: 4,
           margin: const EdgeInsets.all(24),
-        child: Padding(
+          child: Padding(
             padding: const EdgeInsets.all(24),
-          child: Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
-            children: [
+              children: [
                 const Text(
                   'Quiz Complete!',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-              Text(
+                Text(
                   'Score: ${results['score'] ?? 0}',
                   style: const TextStyle(
                     fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Text(
+                Text(
                   'Correct: ${results['correctAnswers'] ?? 0} / ${results['totalQuestions'] ?? 0}',
                   style: const TextStyle(fontSize: 16),
                 ),
@@ -605,7 +605,7 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
-                onPressed: _restartGame,
+                  onPressed: _restartGame,
                   icon: const Icon(Icons.replay),
                   label: const Text('Play Again'),
                 ),
@@ -627,31 +627,34 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Row(
-            children: [
-              Container(
+          children: [
+            Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
+              decoration: BoxDecoration(
                 color: colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
+              ),
+              child: Text(
                 'Question ${_currentQuestionIndex + 1} / ${_questions!.length}',
                 style: TextStyle(
                   color: colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
             const Spacer(),
             // Enhanced timer display
-                    Container(
+            Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
+              decoration: BoxDecoration(
                 color: _getTimerColor(progress, colorScheme),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: _getTimerColor(progress, colorScheme).withValues(alpha: 0.3),
+                    color: _getTimerColor(
+                      progress,
+                      colorScheme,
+                    ).withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -660,25 +663,21 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.timer,
-                    size: 16,
-                    color: colorScheme.onPrimary,
-                  ),
+                  Icon(Icons.timer, size: 16, color: colorScheme.onPrimary),
                   const SizedBox(width: 4),
                   Text(
                     '${_timeRemaining}s',
                     style: TextStyle(
                       color: colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       fontSize: 14,
-                          ),
-                        ),
-                ],
-                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         backgroundColor: colorScheme.surface,
         elevation: 0,
         actions: [
@@ -694,34 +693,34 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
           // Enhanced progress bar with animation
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
+                    Text(
                       'Progress',
                       style: TextStyle(
-                            color: colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
+                      ),
+                    ),
+                    Text(
                       '${((_currentQuestionIndex + 1) / _questions!.length * 100).toInt()}%',
                       style: TextStyle(
-                            color: colorScheme.primary,
+                        color: colorScheme.primary,
                         fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
-                      value: (_currentQuestionIndex + 1) / _questions!.length,
+                    value: (_currentQuestionIndex + 1) / _questions!.length,
                     color: colorScheme.primary,
                     backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
                     minHeight: 6,
@@ -732,7 +731,7 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                 if (isTimeRunning) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                    children: [
                       Text(
                         'Time Remaining',
                         style: TextStyle(
@@ -741,34 +740,37 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                              Text(
+                      Text(
                         '${_timeRemaining}s',
                         style: TextStyle(
                           color: _getTimerColor(progress, colorScheme),
                           fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: LinearProgressIndicator(
                       value: progress,
                       color: _getTimerColor(progress, colorScheme),
-                      backgroundColor: _getTimerColor(progress, colorScheme).withValues(alpha: 0.1),
+                      backgroundColor: _getTimerColor(
+                        progress,
+                        colorScheme,
+                      ).withValues(alpha: 0.1),
                       minHeight: 6,
-                                ),
-                        ),
-                      ],
-            ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-        ),
-          
+
           // Question card with enhanced design
           Expanded(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -776,39 +778,42 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                   // Question container with modern design
                   Container(
                     padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
+                    decoration: BoxDecoration(
                       color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
                         color: colorScheme.outline.withValues(alpha: 0.2),
                         width: 1,
-          ),
-          boxShadow: [
-              BoxShadow(
+                      ),
+                      boxShadow: [
+                        BoxShadow(
                           color: colorScheme.shadow.withValues(alpha: 0.1),
                           blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-          ],
-        ),
-                child: Column(
-                  children: [
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
                         // Question number indicator
-                    Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
                             color: colorScheme.primaryContainer,
                             borderRadius: BorderRadius.circular(20),
                           ),
-                        child: Text(
+                          child: Text(
                             'Question ${_currentQuestionIndex + 1}',
                             style: TextStyle(
                               color: colorScheme.onPrimaryContainer,
                               fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
                         const SizedBox(height: 16),
                         Text(
                           question.question,
@@ -816,49 +821,52 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             height: 1.3,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                  ],
-                ),
-              ),
-                  
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 24),
                   // Answer options with enhanced design
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: question.options.length,
-                      itemBuilder: (context, i) {
+                  ...List.generate(question.options.length, (i) {
                         final isSelected = _selectedAnswerIndex == i;
                         final isSubmitted = _isAnswerSelected;
-                        
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
+                          constraints: const BoxConstraints(
+                            minHeight: 60,
+                            maxHeight: 120,
+                          ),
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: !isSubmitted ? () => _selectAnswer(i) : null,
+                              onTap: !isSubmitted
+                                  ? () => _selectAnswer(i)
+                                  : null,
                               borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
+                              child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
+                                decoration: BoxDecoration(
                                   color: _getAnswerBackgroundColor(
-            isSelected,
+                                    isSelected,
                                     isSubmitted,
-            colorScheme,
-          ),
+                                    colorScheme,
+                                  ),
                                   borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _getAnswerBorderColor(
-              isSelected,
+                                  border: Border.all(
+                                    color: _getAnswerBorderColor(
+                                      isSelected,
                                       isSubmitted,
-              colorScheme,
-            ),
+                                      colorScheme,
+                                    ),
                                     width: 2,
-          ),
-          boxShadow: [
-              BoxShadow(
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
                                       color: _getAnswerShadowColor(
                                         isSelected,
                                         isSubmitted,
@@ -869,136 +877,138 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
                                     ),
                                   ],
                                 ),
-              child: Row(
-                children: [
+                                child: Row(
+                                  children: [
                                     // Enhanced option letter with modern design
-                  Container(
+                                    Container(
                                       width: 40,
                                       height: 40,
-                    decoration: BoxDecoration(
+                                      decoration: BoxDecoration(
                                         color: _getOptionLetterBackgroundColor(
-                            isSelected,
+                                          isSelected,
                                           isSubmitted,
-                            colorScheme,
-                          ),
+                                          colorScheme,
+                                        ),
                                         borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                                            color: _getOptionLetterBackgroundColor(
-                            isSelected,
-                                              isSubmitted,
-                            colorScheme,
-                          ).withValues(alpha: 0.3),
-                          blurRadius: 8,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                _getOptionLetterBackgroundColor(
+                                                  isSelected,
+                                                  isSubmitted,
+                                                  colorScheme,
+                                                ).withValues(alpha: 0.3),
+                                            blurRadius: 8,
                                             offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
+                                          ),
+                                        ],
+                                      ),
+                                      child: Center(
+                                        child: Text(
                                           String.fromCharCode(65 + i),
                                           style: TextStyle(
                                             fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                                            fontWeight: FontWeight.bold,
                                             color: _getOptionLetterTextColor(
                                               isSelected,
                                               isSubmitted,
                                               colorScheme,
-                        ),
-                      ),
-                    ),
-                  ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                     const SizedBox(width: 16),
 
-                                    // Option text with enhanced typography
-                  Expanded(
-                    child: Text(
-                                        question.options[i],
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: _getAnswerTextColor(
-                          isSelected,
-                                            isSubmitted,
-                          colorScheme,
-                        ),
-                                          height: 1.4,
-                      ),
-                    ),
-                  ),
+                                     // Option text with enhanced typography
+                                     Expanded(
+                                       child: Text(
+                                         question.options[i],
+                                         style: TextStyle(
+                                           fontSize: 16,
+                                           fontWeight: isSelected
+                                               ? FontWeight.w600
+                                               : FontWeight.w500,
+                                           color: _getAnswerTextColor(
+                                             isSelected,
+                                             isSubmitted,
+                                             colorScheme,
+                                           ),
+                                           height: 1.4,
+                                         ),
+                                         maxLines: 3,
+                                         overflow: TextOverflow.ellipsis,
+                                       ),
+                                     ),
 
                                     // Selection indicator (only show selected, not correct/incorrect)
                                     if (isSelected && isSubmitted)
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
                                           color: colorScheme.primaryContainer,
-                                          borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: Icon(
                                           Icons.check,
                                           color: colorScheme.onPrimaryContainer,
                                           size: 20,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-        ),
-      ),
-    );
-                      },
-                    ),
-                  ),
-                  
-                  // Action buttons with enhanced design
-                  if (_isAnswerSelected) ...[
-                    const SizedBox(height: 24),
-              Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                  children: [
-                          if (_currentQuestionIndex < _questions!.length - 1) ...[
-              Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: _nextQuestion,
-                                icon: const Icon(Icons.arrow_forward),
-                                label: const Text('Next Question'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colorScheme.primary,
-                        foregroundColor: colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ] else ...[
-                  Expanded(
-                              child: ElevatedButton.icon(
+                          ),
+                        );
+                  }),
+
+                  // Action buttons with enhanced design
+                  if (_isAnswerSelected) ...[
+                    const SizedBox(height: 24),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: _currentQuestionIndex < _questions!.length - 1
+                            ? ElevatedButton.icon(
+                                onPressed: _nextQuestion,
+                                icon: const Icon(Icons.arrow_forward),
+                                label: const Text('Next Question'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: colorScheme.primary,
+                                  foregroundColor: colorScheme.onPrimary,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              )
+                            : ElevatedButton.icon(
                                 onPressed: _endGame,
                                 icon: const Icon(Icons.check_circle),
                                 label: const Text('Complete Quiz'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green,
                                   foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                  ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-            ],
-          ),
-        ),
+              ),
+            ),
           ),
         ],
       ),
@@ -1010,7 +1020,6 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
   // using .withOpacity for all color alpha values and following Material 3 design.
 
   // --- Color/Gradient helpers ---
-
 
   // Enhanced helper methods for new UI design
   Color _getTimerColor(double progress, ColorScheme colorScheme) {
@@ -1104,9 +1113,9 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
         backgroundColor: colorScheme.surface,
       ),
       body: Center(
-          child: Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+          children: [
             const Text('Choose time limit per question:'),
             const SizedBox(height: 20),
             ...List.generate(4, (index) {
@@ -1133,9 +1142,9 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
         backgroundColor: colorScheme.surface,
       ),
       body: Center(
-              child: Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+          children: [
             const Text('How many questions?'),
             const SizedBox(height: 20),
             ...List.generate(4, (index) {
@@ -1162,9 +1171,9 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
         backgroundColor: colorScheme.surface,
       ),
       body: Center(
-          child: Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+          children: [
             const Text('Choose a math topic:'),
             const SizedBox(height: 20),
             ...GameCategory.values.map((category) {
@@ -1190,9 +1199,9 @@ class _AINativeGameScreenState extends ConsumerState<AINativeGameScreen>
         backgroundColor: colorScheme.surface,
       ),
       body: Center(
-              child: Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+          children: [
             const Text('Choose difficulty level:'),
             const SizedBox(height: 20),
             ...AIDifficulty.values.map((difficulty) {
